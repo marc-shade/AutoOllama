@@ -1,10 +1,38 @@
-import streamlit as st 
+import os
+import streamlit as st
 from agent_management import display_agents
-from ui_utils import get_api_key, display_api_key_input, display_discussion_and_whiteboard, display_download_button, display_user_input, display_rephrased_request, display_reset_and_upload_buttons, display_user_request_input, rephrase_prompt, get_agents_from_text, extract_code_from_response, get_workflow_from_agents
+from ui_utils import (
+    get_api_key,
+    display_discussion_and_whiteboard,
+    display_download_button,
+    display_user_input,
+    display_rephrased_request,
+    display_reset_and_upload_buttons,
+    display_user_request_input,
+    rephrase_prompt,
+    get_agents_from_text,
+    extract_code_from_response,
+    get_workflow_from_agents,
+)
 
 
-def main(): 
-    st.markdown("""
+def main():
+    # Initialize session state variables if they are not already present
+    if 'trigger_rerun' not in st.session_state:
+        st.session_state.trigger_rerun = False
+    if 'whiteboard' not in st.session_state:
+        st.session_state.whiteboard = ""
+    if 'last_comment' not in st.session_state:
+        st.session_state.last_comment = ""
+    if 'discussion_history' not in st.session_state:
+        st.session_state.discussion_history = ""
+    if 'rephrased_request' not in st.session_state:
+        st.session_state.rephrased_request = ""
+    if 'need_rerun' not in st.session_state:
+        st.session_state.need_rerun = False
+        
+    st.markdown(
+        """
         <style>
         /* General styles */
         body {
@@ -106,70 +134,63 @@ def main():
             color: #dc3545 !important;
         }
         </style>
-        """, unsafe_allow_html=True)
-    
-    model_token_limits = { 
-        'llama3-70b-8192': 8192, 
-        'llama3-8b-8192': 8192, 
-        'mixtral-8x7b-32768': 32768,
-        'gemma-7b-it': 8192 
-    } 
+        """,
+        unsafe_allow_html=True,
+    )
 
-    api_key = get_api_key()
-    if api_key is None:
-        api_key = display_api_key_input()
-        if api_key is None:
-            st.warning("Please enter your GROQ_API_KEY to use the app.")
-            return
 
-    
-    col1, col2, col3 = st.columns([2, 5, 3]) 
-    with col3: 
-        selected_model = st.selectbox( 
-            'Select Model', 
-            options=list(model_token_limits.keys()), 
-            index=0, 
-            key='model_selection' 
-        ) 
-        st.session_state.model = selected_model 
-        st.session_state.max_tokens = model_token_limits[selected_model] 
+    model_token_limits = {
+        "mistral:7b-instruct-v0.2-fp16": 8192,
+        "llama3:8b-instruct-fp16": 8192,
+    }
+
+
+    # Example callback that needs to trigger a rerun
+    if st.button("Click to rerun"):
+        st.session_state.trigger_rerun = True  # Set the flag instead of calling rerun directly
+
+    col1, col2, col3 = st.columns([2, 5, 3])
+    with col3:
+        selected_model = st.selectbox(
+            "Select Model",
+            options=list(model_token_limits.keys()),
+            index=0,
+            key="model_selection",
+        )
+        st.session_state.model = selected_model
+        st.session_state.max_tokens = model_token_limits[selected_model]
         temperature = st.slider(
             "Set Temperature",
             min_value=0.0,
             max_value=1.0,
-            value=st.session_state.get('temperature', 0.3),  # Default value or the last set value
+            value=st.session_state.get("temperature", 0.5),
             step=0.01,
-            key='temperature'
+            key="temperature",
         )
-        
-    st.title("AutoGroq") 
-        
-    # Ensure default values for session state are set     
-    if "discussion" not in st.session_state: 
-        st.session_state.discussion = ""
-    if "whiteboard" not in st.session_state: 
-        st.session_state.whiteboard = "" # Apply CSS classes to elements 
-    
-    with st.sidebar: 
-        st.markdown('<div class="sidebar">', unsafe_allow_html=True) 
-        st.markdown('</div>', unsafe_allow_html=True) 
 
-    display_agents() 
-    
-    with st.container(): 
-        st.markdown('<div class="main">', unsafe_allow_html=True) 
-        display_user_request_input() 
-        display_rephrased_request() 
-        st.markdown('<div class="discussion-whiteboard">', unsafe_allow_html=True) 
-        display_discussion_and_whiteboard() 
-        st.markdown('</div>', unsafe_allow_html=True) 
-        st.markdown('<div class="user-input">', unsafe_allow_html=True) 
-        display_user_input() 
-        st.markdown('</div>', unsafe_allow_html=True) 
-        display_reset_and_upload_buttons() 
-        st.markdown('</div>', unsafe_allow_html=True) 
+    st.title("AutoOllama")
+    st.text_input(
+        "Ollama URL",
+        value=st.session_state.get("ollama_url", "http://localhost:11434"),
+        key="ollama_url",
+    )
 
-    display_download_button()        
-    
-if __name__ == "__main__": 
+    with st.sidebar:
+        display_agents()
+
+    with st.container():
+        display_user_request_input()
+        display_rephrased_request()
+        display_discussion_and_whiteboard()
+        display_user_input()
+        display_reset_and_upload_buttons()
+
+    display_download_button()
+
+    # At a strategic point, check if a rerun is needed
+    if st.session_state.trigger_rerun:
+        st.session_state.trigger_rerun = False  # Reset the flag
+        st.experimental_rerun()  # Now call rerun
+
+if __name__ == "__main__":
     main()
