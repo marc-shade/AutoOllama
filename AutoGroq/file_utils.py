@@ -1,12 +1,12 @@
-import re 
+# AutoOllama/file_utils.py
+import os
+import json
+import re
 
-def sanitize_text(text): 
-    # Remove non-ASCII characters 
-    text = re.sub(r'[^\x00-\x7F]+', '', text) 
-    # Remove non-alphanumeric characters except for standard punctuation 
-    text = re.sub(r'[^a-zA-Z0-9\s.,!?:;\'"-]+', '', text) 
-    return text 
-
+def sanitize_text(text):
+    # Only remove non-printable characters
+    text = ''.join(c for c in text if c.isprintable())
+    return text
 
 def create_agent_data(expert_name, description, skills=None, tools=None):
     # Format the expert_name
@@ -21,11 +21,11 @@ def create_agent_data(expert_name, description, skills=None, tools=None):
     agent_data = {
         "type": "assistant",
         "config": {
-            "name": expert_name,  # Use the original expert_name here
+            "name": expert_name, # Use the original expert_name here
             "llm_config": {
                 "config_list": [
                     {
-                        "model": "gpt-4-1106-preview"
+                        "model": "mistral"  # Default to Mistral
                     }
                 ],
                 "temperature": 0.1,
@@ -36,7 +36,7 @@ def create_agent_data(expert_name, description, skills=None, tools=None):
             "max_consecutive_auto_reply": 8,
             "system_message": f"You are a helpful assistant that can act as {expert_name} who {sanitized_description}."
         },
-        "description": description,  # Use the original description here
+        "description": description, # Use the original description here
         "skills": sanitized_skills,
         "tools": sanitized_tools
     }
@@ -50,11 +50,9 @@ def create_agent_data(expert_name, description, skills=None, tools=None):
     }
     return agent_data, crewai_agent_data
 
-        
 def create_workflow_data(workflow):
     # Sanitize the workflow name
     sanitized_workflow_name = sanitize_text(workflow["name"])
     sanitized_workflow_name = sanitized_workflow_name.lower().replace(' ', '_')
 
     return workflow
-
