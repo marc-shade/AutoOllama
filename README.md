@@ -2,7 +2,7 @@
 
 ...is a port of the fantastically awesome AutoGroq! Now the magic happens 100% local.
 
-
+<img src="https://2acrestudios.com/wp-content/uploads/2024/05/Screenshot-2024-05-11-at-7.48.54 PM.png" />
 
 **What the heck is...**
 # AutoGroq?
