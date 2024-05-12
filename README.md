@@ -2,6 +2,11 @@
 
 ...is a port of the fantastically awesome AutoGroq! Now the magic happens 100% local.
 
+-------
+streamlit run AutoOllama/main.py
+-------
+
+
 <img src="https://2acrestudios.com/wp-content/uploads/2024/05/8pqr85.jpg" />
 
 <img src="https://2acrestudios.com/wp-content/uploads/2024/05/Screenshot-2024-05-11-at-9.11.29 PM.png" />
