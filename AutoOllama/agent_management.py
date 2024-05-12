@@ -20,6 +20,10 @@ def agent_button_callback(agent_index):
         agent_name = agent['config']['name'] if 'config' in agent and 'name' in agent['config'] else ''
         st.session_state['form_agent_name'] = agent_name
         st.session_state['form_agent_description'] = agent['description'] if 'description' in agent else ''
+
+        # Set a flag to trigger a rerun in the main function
+        st.session_state['trigger_rerun'] = True 
+
         # Directly call process_agent_interaction here if appropriate
         process_agent_interaction(agent_index)
     return callback
@@ -41,8 +45,7 @@ def delete_agent(index):
         else:
             print(f"JSON file not found: {json_file}")
 
-    st.experimental_rerun()
-
+    st.session_state['trigger_rerun'] = True # Trigger rerun after deleting an agent
 
 def display_agents():
     if "agents" in st.session_state and st.session_state.agents:
@@ -90,7 +93,7 @@ def display_agents():
                             agent['new_description'] = new_description
                             # Store the new description separately
                             print(f"Description regenerated for {agent['config']['name']}: {new_description}")
-                            st.experimental_rerun()  # Rerun the app to update the description text area
+                            st.session_state['trigger_rerun'] = True 
                         else:
                             print(f"Failed to regenerate description for {agent['config']['name']}")
 
@@ -104,6 +107,8 @@ def display_agents():
                         if 'new_description' in agent:
                             del agent['new_description'] # Remove the temporary new description
                         st.success("Agent properties updated!")
+                        # Trigger rerun after saving agent properties
+                        st.session_state['trigger_rerun'] = True
                     else:
                         st.warning("Invalid agent selected for editing.")
     else:
@@ -214,7 +219,6 @@ def process_agent_interaction(agent_index):
     if st.session_state.discussion:
         request += f" The discussion so far has been {st.session_state.discussion[-50000:]}."
 
-  
     # Reset the UI update flag
     st.session_state["update_ui"] = False
 
@@ -228,12 +232,12 @@ def process_agent_interaction(agent_index):
         full_response += response_text  # Accumulate the full response
         # Update the accumulated response in session state
         st.session_state["accumulated_response"] = full_response
+        # Set the flag to trigger a rerun in the main loop
+        st.session_state['trigger_rerun'] = True
 
-    # Update the UI with the full response
+    # Update the UI with the full response outside the loop
     update_discussion_and_whiteboard(agent_name, full_response, user_input)
-    st.experimental_rerun()  # Re-run the app to display the updated UI
-
-    
+   
     # Additionally, populate the sidebar form with the agent's information
     st.session_state['form_agent_name'] = agent_name
     st.session_state['form_agent_description'] = description
