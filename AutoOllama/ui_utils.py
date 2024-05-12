@@ -218,7 +218,7 @@ def get_workflow_from_agents(agents):
             "config": {
                 "name": "group_chat_manager",
                 "llm_config": {
-                    "config_list": [{"model": "mistral"}],  # Updated model
+                    "config_list": [{"model": "llama3:8b"}],  # Updated model
                     "temperature": temperature_value,
                     "cache_seed": 42,
                     "timeout": 600,
@@ -263,13 +263,18 @@ def get_workflow_from_agents(agents):
                 sanitize_text(a["config"]["name"]).lower().replace(" ", "_")
                 for a in agents[1:]
             ]
-            system_message += f" You are the primary coordinator who will receive suggestions or advice from all the other agents ({', '.join(other_agent_names)}). You must ensure that the final response integrates the suggestions from other agents or team members. YOUR FINAL RESPONSE MUST OFFER THE COMPLETE RESOLUTION TO THE USER'S REQUEST. When the user's request has been satisfied and all perspectives are integrated, you can respond with TERMINATE."
+            system_message += f"""
+                You are the primary coordinator responsible for integrating suggestions and advice from the following agents: {', '.join(other_agent_names)}. Your role is to ensure that the final response to the user incorporates these perspectives comprehensively. 
+                YOUR FINAL RESPONSE MUST DELIVER A COMPLETE RESOLUTION TO THE USER'S REQUEST. 
+                Once the user's request is fully addressed with all aspects considered, conclude your interaction with the command: TERMINATE.
+            """
+
         agent_config = {
             "type": "assistant",
             "config": {
                 "name": formatted_agent_name,
                 "llm_config": {
-                    "config_list": [{"model": "mistral"}],  # Updated model
+                    "config_list": [{"model": "llama3:8b"}],  # Updated model
                     "temperature": temperature_value,
                     "cache_seed": 42,
                     "timeout": 600,
@@ -385,7 +390,21 @@ def get_agents_from_text(text):
     
     ollama_request = {
         "model": st.session_state.model,
-        "prompt": f"""{system_prompt}\n\nSchema: {json.dumps(schema)}\n\nExample: {json.dumps(json_example)}\n\nYou are an expert system designed to identify and recommend the optimal team of experts required to fulfill this specific user's request: {text} Your analysis should consider the complexity, domain, and specific needs of the request to assemble a multidisciplinary team of experts. Each recommended expert should come with a defined role, a brief description of their expertise, their skill set, and the tools they would utilize to achieve the user's goal. The first agent must be qualified to manage the entire project, aggregate the work done by all the other agents, and produce a robust, complete, and reliable solution. Respond with ONLY a JSON array of experts, where each expert is an object adhering to the schema:""",
+        "prompt": f"""
+            {system_prompt}
+
+            Schema: {json.dumps(schema)}
+
+            Example: {json.dumps(json_example)}
+
+            As an expert system, your task is to identify and recommend the optimal team of experts necessary to fulfill the specific user request: {text}. Analyze the complexity, domain, and specific needs of the request to assemble a multidisciplinary team of experts. Each expert should be characterized by:
+            - Defined role
+            - Brief description of expertise
+            - Skill set
+            - Tools utilized to achieve the user's goal
+
+            The lead agent must be qualified to manage the project, coordinate the contributions from all team members, and ensure the delivery of a robust, complete, and reliable solution. Respond with ONLY a JSON array of experts, where each expert is an object that adheres to the following schema:
+        """,
         "options": {"temperature": temperature_value},
         "stream": False,
         "format": "json",  # KEEP THIS LINE
