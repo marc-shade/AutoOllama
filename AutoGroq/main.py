@@ -15,6 +15,8 @@ from ui_utils import (
     get_workflow_from_agents,
 )
 
+# Set up the page to use a wide layout
+st.set_page_config(layout="wide")
 
 def main():
     # Initialize session state variables if they are not already present
@@ -127,6 +129,7 @@ def main():
             padding: 10px !important;
             border: 1px solid #cccccc !important;
             border-radius: 5px !important;
+            width: 400px;
         }
 
         /* Error message styles */
@@ -140,8 +143,25 @@ def main():
 
 
     model_token_limits = {
-        "mistral:7b-instruct-v0.2-fp16": 8192,
-        "llama3:8b-instruct-fp16": 8192,
+    "llama3:8b-instruct-fp16": 8192,
+    "deepseek-coder:6.7b-instruct": 8192,  
+    "deepseek-coder:6.7b-instruct-fp16": 8192,
+    "dolphin-llama3:8b-v2.9-fp16": 8192,
+    "gemma:2b-instruct": 8192,
+    "gemma:2b-instruct-fp16": 8192,
+    "llama2:13b-chat-q8_0": 8192,
+    "llama3:8b": 8192,
+    "llama3:latest": 8192,
+    "llama3-chatqa:8b-v1.5-fp16": 8192,
+    "llama3-gradient:8b-instruct-1048k-fp16": 8192,
+    "llava-phi3:3.8b-mini-fp16": 8192,
+    "mistral:7b-instruct-v0.2-q8_0": 8192,
+    "mistral:7b-instruct-v0.2-fp16": 8192,
+    "nous-hermes2:10.7b-solar-fp16": 8192,
+    "open-orca-platypus2:13b-q8_0": 8192,
+    "openhermes:7b-mistral-v2.5-fp16": 8192,
+    "phi3:3.8b-mini-instruct-4k-fp16": 8192,
+    "samantha-mistral:7b-instruct-fp16": 8192
     }
 
 
