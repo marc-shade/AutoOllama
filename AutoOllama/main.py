@@ -185,7 +185,7 @@ def main():
             "Set Temperature",
             min_value=0.0,
             max_value=1.0,
-            value=st.session_state.get("temperature", 0.5),
+            value=st.session_state.get("temperature", 0.1),
             step=0.01,
             key="temperature",
         )
