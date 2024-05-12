@@ -4,7 +4,7 @@
 
 <img src="https://2acrestudios.com/wp-content/uploads/2024/05/8pqr85.jpg" />
 
-<img src="https://2acrestudios.com/wp-content/uploads/2024/05/Screenshot-2024-05-11-at-7.48.54 PM.png" />
+<img src="https://2acrestudios.com/wp-content/uploads/2024/05/Screenshot-2024-05-11-at-9.11.29 PM.png" />
 
 **What the heck is...**
 # AutoGroq?
