@@ -38,7 +38,7 @@ def main():
         <style>
         /* General styles */
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Courier New', sans-serif!important;
             background-color: #f0f0f0;
         }
 
@@ -140,11 +140,10 @@ def main():
         unsafe_allow_html=True,
     )
 
-
     model_token_limits = {
     "mistral:7b-instruct-v0.2-fp16": 8192,
     "llama3:8b-instruct-fp16": 8192,
-    "deepseek-coder:6.7b-instruct": 8192,  # Assuming the same token limit for simplicity
+    "deepseek-coder:6.7b-instruct": 8192,
     "deepseek-coder:6.7b-instruct-fp16": 8192,
     "dolphin-llama3:8b-v2.9-fp16": 8192,
     "gemma:2b-instruct": 8192,
@@ -162,12 +161,6 @@ def main():
     "phi3:3.8b-mini-instruct-4k-fp16": 8192,
     "samantha-mistral:7b-instruct-fp16": 8192
 }
-
-
-
-    # Example callback that needs to trigger a rerun
-    if st.button("Click to rerun"):
-        st.session_state.trigger_rerun = True  # Set the flag instead of calling rerun directly
 
     col1, col2, col3 = st.columns([2, 5, 3])
     with col3:
