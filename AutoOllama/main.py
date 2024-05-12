@@ -143,7 +143,7 @@ def main():
     )
 
     model_token_limits = {
-        "llama3:8b-instruct-fp16": 8192,
+        "mistral:7b-instruct-v0.2-q8_0": 8192,
         "deepseek-coder:6.7b-instruct": 8192,
         "deepseek-coder:6.7b-instruct-fp16": 8192,
         "dolphin-llama3:8b-v2.9-fp16": 8192,
@@ -152,10 +152,10 @@ def main():
         "llama2:13b-chat-q8_0": 8192,
         "llama3:8b": 8192,
         "llama3:latest": 8192,
+        "llama3:8b-instruct-fp16": 8192,
         "llama3-chatqa:8b-v1.5-fp16": 8192,
         "llama3-gradient:8b-instruct-1048k-fp16": 8192,
         "llava-phi3:3.8b-mini-fp16": 8192,
-        "mistral:7b-instruct-v0.2-q8_0": 8192,
         "mistral:7b-instruct-v0.2-fp16": 8192,
         "nous-hermes2:10.7b-solar-fp16": 8192,
         "open-orca-platypus2:13b-q8_0": 8192,
