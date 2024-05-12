@@ -119,22 +119,40 @@ def regenerate_agent_description(agent):
     print(f"user_request: {user_request}")
     discussion_history = st.session_state.get('discussion_history', '')
 
-    prompt = f""" You are an AI assistant helping to improve an agent's description. The agent's current details are: Name: {agent_name} Description: {agent_description}
+    prompt = f"""
+    You are an AI assistant helping to improve an agent's description. The agent's current details are:
+    Name: {agent_name}
+    Description: {agent_description}
 
     The current user request is: {user_request}
-
     The discussion history so far is: {discussion_history}
 
-    Please generate a revised description for this agent that defines it in the best manner possible to address the current user request, taking into account the discussion thus far. Return only the revised description, without any additional commentary or narrative. It is imperative that you return ONLY the text of the new description. No preamble, no narrative, no superfluous commentary whatsoever. Just the description, unlabeled, please. """
+    Please generate a revised description for this agent that defines it in the best manner possible to address the current user request, taking into account the discussion thus far.
+    Return only the revised description, without any additional commentary or narrative.
+    It is imperative that you return ONLY the text of the new description. No preamble, no narrative, no superfluous commentary whatsoever. Just the description, unlabeled, please.
+    """
 
     print(f"regenerate_agent_description called with agent_name: {agent_name}")
     print(f"regenerate_agent_description called with prompt: {prompt}")
 
-    response = send_request_to_ollama_api(agent_name, prompt)
-    if response:
-        return response.strip()
+    response_generator = send_request_to_ollama_api(agent_name, prompt)
+
+    # Process the generator to accumulate the full response
+    full_response = ""
+    try:
+        for response_chunk in response_generator:
+            response_text = response_chunk.get("response", "")
+            full_response += response_text
+    except Exception as e:
+        print(f"Error processing response generator: {e}")
+        return None
+
+    # Now you can safely use .strip() on the accumulated string
+    if full_response:
+        return full_response.strip()
     else:
         return None
+
 
 def download_agent_file(expert_name):
     # Format the expert_name
