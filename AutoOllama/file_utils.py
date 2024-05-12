@@ -25,7 +25,7 @@ def create_agent_data(expert_name, description, skills=None, tools=None):
             "llm_config": {
                 "config_list": [
                     {
-                        "model": "mistral"  # Default to Mistral
+                        "model": "llama3:8b"  # Default to Llama3
                     }
                 ],
                 "temperature": 0.1,
