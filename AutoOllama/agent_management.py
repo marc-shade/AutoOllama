@@ -120,17 +120,21 @@ def regenerate_agent_description(agent):
     discussion_history = st.session_state.get('discussion_history', '')
 
     prompt = f"""
-    You are an AI assistant helping to improve an agent's description. The agent's current details are:
-    Name: {agent_name}
-    Description: {agent_description}
+        You are an AI assistant tasked with refining the description of an AI agent. Below are the agent's current details:
+        - Name: {agent_name}
+        - Description: {agent_description}
 
-    The current user request is: {user_request}
-    The discussion history so far is: {discussion_history}
+        Current user request: {user_request}
+        Discussion history: {discussion_history}
 
-    Please generate a revised description for this agent that defines it in the best manner possible to address the current user request, taking into account the discussion thus far.
-    Return only the revised description, without any additional commentary or narrative.
-    It is imperative that you return ONLY the text of the new description. No preamble, no narrative, no superfluous commentary whatsoever. Just the description, unlabeled, please.
+        Use a step-by-step reasoning process to:
+        1. Analyze the current description and user request.
+        2. Identify key areas where the description can be improved to better meet the user request.
+        3. Generate a revised description that incorporates these improvements.
+
+        Return only the revised description, without any additional commentary. Ensure the response is concise and strictly limited to the revised description, devoid of any preamble or extraneous text.
     """
+
 
     print(f"regenerate_agent_description called with agent_name: {agent_name}")
     print(f"regenerate_agent_description called with prompt: {prompt}")
