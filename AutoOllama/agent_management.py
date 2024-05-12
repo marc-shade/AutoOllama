@@ -142,7 +142,7 @@ def regenerate_agent_description(agent):
         2. Identify key areas where this can be improved to better meet the user request: {agent_description}
         3. Generate a revised agent description that incorporates these improvements.
 
-        Return only the revised description, without any additional commentary or narrative.  It is imperative that you return ONLY the text of the new agent description.  
+        Return only the revised description, without a title or any additional commentary or narrative.  It is imperative that you return ONLY the text of the new agent description.  
         No preamble, no narrative, no superfluous commentary whatsoever.  Just the description, unlabeled, no title, please.
     """
 
