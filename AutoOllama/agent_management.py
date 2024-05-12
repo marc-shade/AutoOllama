@@ -64,12 +64,7 @@ def display_agents():
             with col2:
                 if "next_agent" in st.session_state and st.session_state.next_agent == agent_name:
                     button_style = """
-                    <style>
-                    div[data-testid*="stButton"] > button[kind="secondary"] {
-                        background-color: green !important;
-                        color: white !important;
-                    }
-                    </style>
+                    
                     """
                     st.markdown(button_style, unsafe_allow_html=True)
                 st.button(agent_name, key=f"agent_{index}", on_click=agent_button_callback(index))
@@ -82,7 +77,6 @@ def display_agents():
 
                     new_name = st.text_input("Name", value=agent['config'].get('name', ''), key=f"name_{edit_index}")
 
-                    # Use the updated description if available, otherwise use the original description
                     description_value = agent.get('new_description', agent.get('description', ''))
                     new_description = st.text_area("Description", value=description_value, key=f"desc_{edit_index}")
 
@@ -97,18 +91,26 @@ def display_agents():
                         else:
                             print(f"Failed to regenerate description for {agent['config']['name']}")
 
+                    # Use a separate session state variable to track the Save button click
+                    if f'save_clicked_{edit_index}' not in st.session_state:
+                        st.session_state[f'save_clicked_{edit_index}'] = False
+
                     if st.button("Save Changes", key=f"save_{edit_index}"):
+                        st.session_state[f'save_clicked_{edit_index}'] = True
+
+                    # Check the session state variable to determine if the Save button was clicked
+                    if st.session_state[f'save_clicked_{edit_index}']:
                         agent['config']['name'] = new_name
                         agent['description'] = agent.get('new_description', new_description)
-                        # Reset the editing flags to close the expander
                         st.session_state['show_edit'] = False
                         if 'edit_agent_index' in st.session_state:
                             del st.session_state['edit_agent_index']
                         if 'new_description' in agent:
-                            del agent['new_description'] # Remove the temporary new description
+                            del agent['new_description']
                         st.success("Agent properties updated!")
-                        # Trigger rerun after saving agent properties
-                        st.session_state['trigger_rerun'] = True
+                        st.session_state['trigger_rerun'] = True 
+                        # Reset the button click flag
+                        st.session_state[f'save_clicked_{edit_index}'] = False  
                     else:
                         st.warning("Invalid agent selected for editing.")
     else:
@@ -132,12 +134,16 @@ def regenerate_agent_description(agent):
         Current user request: {user_request}
         Discussion history: {discussion_history}
 
+        Generate a revised description for {agent_name} that defines the agent in the best manner possible to address the current user request, taking into account the discussion thus far. 
+        Return only the revised description, without any additional commentary or narrative.  It is imperative that you return ONLY the text of the new agent description.  
+        No preamble, no narrative, no superfluous commentary whatsoever.  Just the description, unlabeled, please.
+    
         Use a step-by-step reasoning process to:
-        1. Analyze the current description and user request.
-        2. Identify key areas where the description can be improved to better meet the user request.
-        3. Generate a revised description that incorporates these improvements.
+        1. Analyze: {user_request}
+        2. Consider: {discussion_history}
+        2. Identify key areas where this can be improved to better meet the user request: {agent_description}
+        3. Generate a revised agent description that incorporates these improvements.
 
-        Return only the revised description, without any additional commentary. Ensure the response is concise and strictly limited to the revised description, devoid of any preamble or extraneous text.
     """
 
 
@@ -182,7 +188,7 @@ def download_agent_file(expert_name):
         b64_content = base64.b64encode(file_content.encode()).decode()
 
         # Create a download link
-        href = f'<a href="data:application/json;base64,{b64_content}" download="{formatted_expert_name}.json">Download {formatted_expert_name}.json</a>'
+        href = f'Download {formatted_expert_name}.json'
         st.markdown(href, unsafe_allow_html=True)
     else:
         st.error(f"File not found: {json_file}")
