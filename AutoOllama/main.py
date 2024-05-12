@@ -165,6 +165,13 @@ def main():
 }
 
     col1, col2, col3 = st.columns([2, 5, 3])
+    with col1:
+        st.title("AutoOllama")
+        st.text_input(
+            "Ollama URL",
+            value=st.session_state.get("ollama_url", "http://localhost:11434"),
+            key="ollama_url",
+        )    
     with col3:
         selected_model = st.selectbox(
             "Select Model",
@@ -183,12 +190,7 @@ def main():
             key="temperature",
         )
 
-    st.title("AutoOllama")
-    st.text_input(
-        "Ollama URL",
-        value=st.session_state.get("ollama_url", "http://localhost:11434"),
-        key="ollama_url",
-    )
+    
 
     with st.sidebar:
         display_agents()
