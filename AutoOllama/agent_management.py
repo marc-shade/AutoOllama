@@ -135,15 +135,15 @@ def regenerate_agent_description(agent):
         Discussion history: {discussion_history}
 
         Generate a revised description for {agent_name} that defines the agent in the best manner possible to address the current user request, taking into account the discussion thus far. 
-        Return only the revised description, without any additional commentary or narrative.  It is imperative that you return ONLY the text of the new agent description.  
-        No preamble, no narrative, no superfluous commentary whatsoever.  Just the description, unlabeled, please.
-    
+            
         Use a step-by-step reasoning process to:
         1. Analyze: {user_request}
         2. Consider: {discussion_history}
         2. Identify key areas where this can be improved to better meet the user request: {agent_description}
         3. Generate a revised agent description that incorporates these improvements.
 
+        Return only the revised description, without any additional commentary or narrative.  It is imperative that you return ONLY the text of the new agent description.  
+        No preamble, no narrative, no superfluous commentary whatsoever.  Just the description, unlabeled, no title, please.
     """
 
 
