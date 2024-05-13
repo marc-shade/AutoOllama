@@ -14,9 +14,22 @@ from ui_utils import (
     extract_code_from_response,
     get_workflow_from_agents,
 )
+import requests
 
 # Set up the page to use a wide layout
 st.set_page_config(layout="wide")
+
+
+def get_ollama_models():
+    response = requests.get(f"{st.session_state.ollama_url}/api/tags")
+    response.raise_for_status()
+    models = [
+        model["name"]
+        for model in response.json()["models"]
+        if "embed" not in model["name"]
+    ]
+    return models
+
 
 def main():
     # Initialize session state variables if they are not already present
@@ -32,7 +45,14 @@ def main():
         st.session_state.rephrased_request = ""
     if 'need_rerun' not in st.session_state:
         st.session_state.need_rerun = False
-        
+    if "ollama_url" not in st.session_state:
+        st.session_state.ollama_url = "http://localhost:11434"
+
+    # *** FIX STARTS HERE ***
+    # Initialize in session state (if not present)
+    if "ollama_url_input" not in st.session_state:
+        st.session_state.ollama_url_input = st.session_state.ollama_url
+
     st.markdown(
         """
         <style>
@@ -142,45 +162,27 @@ def main():
         unsafe_allow_html=True,
     )
 
-    model_token_limits = {
-        "mistral:7b-instruct-v0.2-q8_0": 8192,
-        "deepseek-coder:6.7b-instruct": 8192,
-        "deepseek-coder:6.7b-instruct-fp16": 8192,
-        "dolphin-llama3:8b-v2.9-fp16": 8192,
-        "gemma:2b-instruct": 8192,
-        "gemma:2b-instruct-fp16": 8192,
-        "llama2:13b-chat-q8_0": 8192,
-        "llama3:8b": 8192,
-        "llama3:latest": 8192,
-        "llama3:8b-instruct-fp16": 8192,
-        "llama3-chatqa:8b-v1.5-fp16": 8192,
-        "llama3-gradient:8b-instruct-1048k-fp16": 8192,
-        "llava-phi3:3.8b-mini-fp16": 8192,
-        "mistral:7b-instruct-v0.2-fp16": 8192,
-        "nous-hermes2:10.7b-solar-fp16": 8192,
-        "open-orca-platypus2:13b-q8_0": 8192,
-        "openhermes:7b-mistral-v2.5-fp16": 8192,
-        "phi3:3.8b-mini-instruct-4k-fp16": 8192,
-        "samantha-mistral:7b-instruct-fp16": 8192
-    }
-
     col1, col2, col3 = st.columns([2, 5, 3])
     with col1:
         st.title("AutoOllama")
+        # Use the session state value to initialize
         st.text_input(
             "Ollama URL",
-            value=st.session_state.get("ollama_url", "http://localhost:11434"),
-            key="ollama_url",
-        )    
+            value=st.session_state.ollama_url_input, # No default 'value' here
+            key="ollama_url_input",
+        )
+        # Update the main session state variable
+        st.session_state.ollama_url = st.session_state.ollama_url_input 
+    # *** FIX ENDS HERE ***
     with col3:
+        available_models = get_ollama_models()
         selected_model = st.selectbox(
             "Select Model",
-            options=list(model_token_limits.keys()),
+            options=available_models,
             index=0,
             key="model_selection",
         )
         st.session_state.model = selected_model
-        st.session_state.max_tokens = model_token_limits[selected_model]
         temperature = st.slider(
             "Set Temperature",
             min_value=0.0,
@@ -189,8 +191,6 @@ def main():
             step=0.01,
             key="temperature",
         )
-
-    
 
     with st.sidebar:
         display_agents()
