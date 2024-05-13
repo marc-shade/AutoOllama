@@ -19,7 +19,6 @@ import requests
 # Set up the page to use a wide layout
 st.set_page_config(layout="wide")
 
-
 def get_ollama_models():
     response = requests.get(f"{st.session_state.ollama_url}/api/tags")
     response.raise_for_status()
@@ -28,6 +27,8 @@ def get_ollama_models():
         for model in response.json()["models"]
         if "embed" not in model["name"]
     ]
+    # CORRECTED SORTING LOGIC
+    models.sort() # Simple alphabetical sorting for now
     return models
 
 
@@ -48,10 +49,16 @@ def main():
     if "ollama_url" not in st.session_state:
         st.session_state.ollama_url = "http://localhost:11434"
 
-    # *** FIX STARTS HERE ***
     # Initialize in session state (if not present)
     if "ollama_url_input" not in st.session_state:
         st.session_state.ollama_url_input = st.session_state.ollama_url
+
+    # QUERY PARAMS PERSISTENCE FOR MODEL SELECTION
+    # Retrieve and set in session state 
+    if "model" in st.query_params:
+        st.session_state.selected_model = st.query_params["model"][0]
+    else:
+        st.session_state.selected_model = None
 
     st.markdown(
         """
@@ -162,26 +169,29 @@ def main():
         unsafe_allow_html=True,
     )
 
+
     col1, col2, col3 = st.columns([2, 5, 3])
     with col1:
         st.title("AutoOllama")
-        # Use the session state value to initialize
         st.text_input(
             "Ollama URL",
-            value=st.session_state.ollama_url_input, # No default 'value' here
+            value=st.session_state.ollama_url_input,
             key="ollama_url_input",
         )
-        # Update the main session state variable
-        st.session_state.ollama_url = st.session_state.ollama_url_input 
-    # *** FIX ENDS HERE ***
+        st.session_state.ollama_url = st.session_state.ollama_url_input
+
     with col3:
         available_models = get_ollama_models()
         selected_model = st.selectbox(
             "Select Model",
             options=available_models,
-            index=0,
+            index=available_models.index(st.session_state.selected_model)
+            if st.session_state.selected_model in available_models
+            else 0,
             key="model_selection",
         )
+        # Update query params using st.query_params
+        st.query_params["model"] = [selected_model] # Correct syntax
         st.session_state.model = selected_model
         temperature = st.slider(
             "Set Temperature",
@@ -191,6 +201,7 @@ def main():
             step=0.01,
             key="temperature",
         )
+
 
     with st.sidebar:
         display_agents()
@@ -208,6 +219,7 @@ def main():
     if st.session_state.trigger_rerun:
         st.session_state.trigger_rerun = False  # Reset the flag
         st.experimental_rerun()  # Now call rerun
+
 
 if __name__ == "__main__":
     main()
