@@ -3,7 +3,10 @@
 ...is a port of the fantastically awesome AutoGroq! Now the magic happens 100% local.
 
 -------
+```
 streamlit run AutoOllama/main.py
+```
+
 -------
 
 
