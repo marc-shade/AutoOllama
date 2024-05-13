@@ -172,7 +172,7 @@ def main():
 
     col1, col2, col3 = st.columns([2, 5, 3])
     with col1:
-        st.title("AutoOllama")
+        st.title("🦙 AutoOllama")
         st.text_input(
             "Ollama URL",
             value=st.session_state.ollama_url_input,
