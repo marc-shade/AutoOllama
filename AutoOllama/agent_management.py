@@ -10,9 +10,12 @@ from api_utils import send_request_to_ollama_api
 from file_utils import create_agent_data
 from ui_utils import get_api_key, update_discussion_and_whiteboard
 
+
 def agent_button_callback(agent_index):
     # Callback function to handle state update and logic execution
     def callback():
+        print(f"Agent button callback for index {agent_index} called.")
+        print("Session state BEFORE:", st.session_state)  # Log session state BEFORE
         st.session_state['selected_agent_index'] = agent_index
 
         agent = st.session_state.agents[agent_index]
@@ -26,6 +29,7 @@ def agent_button_callback(agent_index):
 
         # Directly call process_agent_interaction here if appropriate
         process_agent_interaction(agent_index)
+        print("Session state AFTER:", st.session_state)  # Log session state AFTER
     return callback
 
 
@@ -61,6 +65,7 @@ def display_agents():
                     # Trigger the expander to open for editing
                     st.session_state['edit_agent_index'] = index
                     st.session_state['show_edit'] = True
+
             with col2:
                 if "next_agent" in st.session_state and st.session_state.next_agent == agent_name:
                     button_style = """
@@ -69,12 +74,22 @@ def display_agents():
                     st.markdown(button_style, unsafe_allow_html=True)
                 st.button(agent_name, key=f"agent_{index}", on_click=agent_button_callback(index))
 
-        if st.session_state.get('show_edit'):
-            edit_index = st.session_state.get('edit_agent_index')
+        # **ENHANCED CLEANUP LOGIC STARTS HERE**
+        edit_index = st.session_state.get('edit_agent_index')
+        show_edit = st.session_state.get('show_edit')
+
+        # Check for stale index:
+        if show_edit and (edit_index is None or edit_index >= len(st.session_state.agents)):
+            print("Stale edit_agent_index detected. Resetting session state.")
+            st.session_state['show_edit'] = False 
+            if 'edit_agent_index' in st.session_state:
+                del st.session_state['edit_agent_index']
+       
+        # Now proceed with the expander logic
+        if show_edit:  
             if edit_index is not None and 0 <= edit_index < len(st.session_state.agents):
                 agent = st.session_state.agents[edit_index]
-                with st.expander(f"Edit Properties of {agent['config'].get('name', '')}", expanded=True):
-
+                with st.expander(f"Edit Properties of {agent['config'].get('name', '')}", expanded=True): 
                     new_name = st.text_input("Name", value=agent['config'].get('name', ''), key=f"name_{edit_index}")
 
                     description_value = agent.get('new_description', agent.get('description', ''))
@@ -110,14 +125,18 @@ def display_agents():
                         st.success("Agent properties updated!")
                         st.session_state['trigger_rerun'] = True 
                         # Reset the button click flag
-                        st.session_state[f'save_clicked_{edit_index}'] = False  
-                    else:
-                        st.warning("Invalid agent selected for editing.")
+                        st.session_state[f'save_clicked_{edit_index}'] = False 
+            # ** The 'else' block is no longer needed here **
+        # **ENHANCED CLEANUP LOGIC ENDS HERE**
+
     else:
         st.sidebar.warning(
             "AutoOllama creates your entire team of downloadable, importable Autogen and CrewAI agents from a simple task request, including an Autogen workflow file! \n\rYou can test your agents with this interface.\n\rNo agents have yet been created. Please enter a new request.\n\r Video demo: https://www.youtube.com/watch?v=JkYzuL8V_4g")
 
+
 def regenerate_agent_description(agent):
+    print("Regenerating agent description...")
+    print("Session state:", st.session_state) # Log session state
     agent_name = agent['config']['name']
     print(f"agent_name: {agent_name}")
     agent_description = agent['description']
@@ -191,6 +210,8 @@ def download_agent_file(expert_name):
         st.error(f"File not found: {json_file}")
 
 def process_agent_interaction(agent_index):
+    print("Processing agent interaction...")
+    print("Session state:", st.session_state)  # Log the session state when this function is called
     # Retrieve agent information using the provided index
     agent = st.session_state.agents[agent_index]
 
