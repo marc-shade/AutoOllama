@@ -125,7 +125,14 @@ def display_agents():
                         st.success("Agent properties updated!")
                         st.session_state['trigger_rerun'] = True 
                         # Reset the button click flag
-                        st.session_state[f'save_clicked_{edit_index}'] = False 
+                        st.session_state[f'save_clicked_{edit_index}'] = False
+
+                    # Checkbox for enabling/disabling 'fetch_web_content' skill
+                    agent['enable_reading_html'] = st.checkbox(
+                        "Add URL reading skill to this Autogen agent",
+                        value=agent.get('enable_reading_html', False),
+                        key=f"enable_reading_html_{edit_index}"
+                    )
             # ** The 'else' block is no longer needed here **
         # **ENHANCED CLEANUP LOGIC ENDS HERE**
 
