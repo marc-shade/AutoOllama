@@ -7,9 +7,9 @@ import os
 import re
 
 from api_utils import send_request_to_ollama_api
-from file_utils import create_agent_data
+from file_utils import create_agent_data, load_skills # Import load_skills
 from ui_utils import get_api_key, update_discussion_and_whiteboard
-
+from skills.fetch_web_content import fetch_web_content  # Import for the new skill from the 'skills' subfolder
 
 def agent_button_callback(agent_index):
     # Callback function to handle state update and logic execution
@@ -214,6 +214,7 @@ def process_agent_interaction(agent_index):
     print("Session state:", st.session_state)  # Log the session state when this function is called
     # Retrieve agent information using the provided index
     agent = st.session_state.agents[agent_index]
+    available_skills = load_skills()  # Load available skills
 
     # Preserve the original "Act as" functionality
     agent_name = agent["config"]["name"]
@@ -223,15 +224,7 @@ def process_agent_interaction(agent_index):
     rephrased_request = st.session_state.get('rephrased_request', '')
 
     reference_url = st.session_state.get('reference_url', '')
-    url_content = ""
-    if reference_url:
-        try:
-            response = requests.get(reference_url)
-            response.raise_for_status()
-            soup = BeautifulSoup(response.text, 'html.parser')
-            url_content = soup.get_text()
-        except requests.exceptions.RequestException as e:
-            print(f"Error occurred while retrieving content from {reference_url}: {e}")
+    url_content = fetch_web_content(reference_url) if reference_url else ""  # Use the new skill
 
     request = f"Act as the {agent_name} who {description}."
     if user_request:
@@ -253,6 +246,16 @@ def process_agent_interaction(agent_index):
     full_response = ""
     for response_chunk in response_generator:
         response_text = response_chunk.get("response", "")
+
+        # Check for skill calls in the response
+        for skill_name in available_skills:
+            if skill_name in response_text:
+                # For now, we assume skills are called by simply mentioning their name
+                #  We'll enhance skill calling with arguments in a later step.
+                skill_function = available_skills[skill_name]
+                skill_result = skill_function() # Execute the skill
+                response_text += f"\nSkill '{skill_name}' result: {skill_result}"
+
         full_response += response_text  # Accumulate the full response
         # Update the accumulated response in session state
         st.session_state["accumulated_response"] = full_response
