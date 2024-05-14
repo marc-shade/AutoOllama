@@ -56,3 +56,19 @@ def create_workflow_data(workflow):
     sanitized_workflow_name = sanitized_workflow_name.lower().replace(' ', '_')
 
     return workflow
+
+def load_skills():
+    """Loads skills from JSON files in the 'skills' directory."""
+    skills_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "skills"))
+    skill_functions = {}
+    for filename in os.listdir(skills_dir):
+        if filename.endswith(".json"):
+            filepath = os.path.join(skills_dir, filename)
+            with open(filepath, "r") as f:
+                skill_data = json.load(f)
+                skill_name = skill_data["name"]
+                skill_code = skill_data["code"][3:-3] # Remove the triple backticks
+                # Dynamically define the skill function using 'exec'
+                exec(skill_code, globals()) # Execute the code in the global scope
+                skill_functions[skill_name] = globals()[skill_name]  # Add the function to the dictionary
+    return skill_functions
