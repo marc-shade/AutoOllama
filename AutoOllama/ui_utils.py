@@ -528,22 +528,44 @@ def zip_files_in_memory(agents_data, workflow_data, crewai_agents):
     # Create separate ZIP buffers for Autogen and CrewAI
     autogen_zip_buffer = io.BytesIO()
     crewai_zip_buffer = io.BytesIO()
-    # Create a ZIP file in memory
+    # Prepare Autogen file data
+    autogen_file_data = {}
+    for agent_name, agent_data in agents_data.items():
+        agent_file_name = f"{agent_name}.json"
+        agent_file_data = json.dumps(agent_data, indent=2)
+        autogen_file_data[f"agents/{agent_file_name}"] = agent_file_data
+
+    # Add fetch_web_content.py to the Autogen ZIP if any agent has the skill
+    for agent_data in agents_data.values():
+        if "fetch_web_content" in agent_data.get("skills", []):
+            with open(
+                os.path.join("skills", "fetch_web_content.py"), "r"
+            ) as skill_file:
+                autogen_file_data["skills/fetch_web_content.py"] = (
+                    skill_file.read()
+                )
+            break  # Only add the skill file once
+
+    # Write workflow file to the Autogen ZIP
+    workflow_file_name = f"{sanitize_text(workflow_data['name'])}.json"
+    workflow_file_data = json.dumps(workflow_data, indent=2)
+    autogen_file_data[f"workflows/{workflow_file_name}"] = workflow_file_data
+
+    # Prepare CrewAI file data
+    crewai_file_data = {}
+    for index, agent_data in enumerate(crewai_agents):
+        agent_file_name = f"agent_{index}.json"
+        agent_file_data = json.dumps(agent_data, indent=2)
+        crewai_file_data[f"agents/{agent_file_name}"] = agent_file_data
+
+    # Create ZIP files
     with zipfile.ZipFile(autogen_zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
-        # Write agent files to the ZIP
-        for agent_name, agent_data in agents_data.items():
-            agent_file_name = f"{agent_name}.json"
-            agent_file_data = json.dumps(agent_data, indent=2)
-            zip_file.writestr(f"agents/{agent_file_name}", agent_file_data)
-        # Write workflow file to the ZIP
-        workflow_file_name = f"{sanitize_text(workflow_data['name'])}.json"
-        workflow_file_data = json.dumps(workflow_data, indent=2)
-        zip_file.writestr(f"workflows/{workflow_file_name}", workflow_file_data)
+        for file_name, file_data in autogen_file_data.items():
+            zip_file.writestr(file_name, file_data)
     with zipfile.ZipFile(crewai_zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
-        for index, agent_data in enumerate(crewai_agents):
-            agent_file_name = f"agent_{index}.json"
-            agent_file_data = json.dumps(agent_data, indent=2)
-            zip_file.writestr(f"agents/{agent_file_name}", agent_file_data)
+        for file_name, file_data in crewai_file_data.items():
+            zip_file.writestr(file_name, file_data)
+
     # Move the ZIP file pointers to the beginning
     autogen_zip_buffer.seek(0)
     crewai_zip_buffer.seek(0)
