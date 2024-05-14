@@ -7,9 +7,10 @@ import pandas as pd
 import re
 import time
 import zipfile
-from file_utils import create_agent_data, sanitize_text
+from file_utils import create_agent_data, sanitize_text, load_skills
 import datetime
 import requests
+from skills.fetch_web_content import fetch_web_content # Import for the new skill from the 'skills' subfolder
 
 def get_api_key():
     """Returns a hardcoded API key."""
@@ -178,16 +179,19 @@ def extract_code_from_response(response):
     """Extracts code blocks from the response."""
     code_pattern = r"```(.*?)```"
     code_blocks = re.findall(code_pattern, response, re.DOTALL)
+
     html_pattern = r"<html.*?>.*?</html>"
     html_blocks = re.findall(html_pattern, response, re.DOTALL | re.IGNORECASE)
+
     js_pattern = r"<script.*?>.*?</script>"
     js_blocks = re.findall(js_pattern, response, re.DOTALL | re.IGNORECASE)
+
     css_pattern = r"<style.*?>.*?</style>"
     css_blocks = re.findall(css_pattern, response, re.DOTALL | re.IGNORECASE)
+
     all_code_blocks = code_blocks + html_blocks + js_blocks + css_blocks
     unique_code_blocks = list(set(all_code_blocks))
     return "\n\n".join(unique_code_blocks)
-
 
 def get_workflow_from_agents(agents):
     """Generates workflow data from a list of agents."""
@@ -255,9 +259,18 @@ def get_workflow_from_agents(agents):
         description = agent["description"]
         formatted_agent_name = sanitize_text(agent_name).lower().replace(" ", "_")
         sanitized_description = sanitize_text(description)
+
+        # Add skills information to the system message
+        skills_section = ""
+        if agent.get("skills"):
+            skills_section = f"You have access to the following skills: {', '.join(agent['skills'])}.\n"
+            skills_section += "To use a skill, simply mention its name in your response.  For example, if you want to use the 'fetch_web_content' skill, you could say 'I will use the fetch_web_content skill to get the content from this website...'."
+
         system_message = (
-            f"You are a helpful assistant that can act as {agent_name} who {sanitized_description}."
+            f"You are a helpful assistant that can act as {agent_name} who {sanitized_description}.\n" 
+            f"{skills_section}" # Add the skill section
         )
+
         if index == 0:
             other_agent_names = [
                 sanitize_text(a["config"]["name"]).lower().replace(" ", "_")
@@ -291,7 +304,7 @@ def get_workflow_from_agents(agents):
             },
             "timestamp": current_timestamp,
             "user_id": "default",
-            "skills": None,  # Set skills to None here
+            "skills": agent.get('skills', None),  # Include agent skills
         }
         workflow["receiver"]["groupchat_config"]["agents"].append(agent_config)
     crewai_agents = []
@@ -360,13 +373,18 @@ def get_agents_from_text(text):
     ollama_url = st.session_state.get("ollama_url", "http://localhost:11434")
     url = f"{ollama_url}/api/generate"
     headers = {"Content-Type": "application/json"}
+    available_skills = list(load_skills().keys())  # Get available skills
+
     # Define the JSON schema for the agent list
     schema = {
         "type": "object",
         "properties": {
             "expert_name": {"type": "string"},
             "description": {"type": "string"},
-            "skills": {"type": "array", "items": {"type": "string"}},
+            "skills": {
+                "type": "array",
+                "items": {"type": "string", "enum": available_skills}
+            },
             "tools": {"type": "array", "items": {"type": "string"}},
         },
         "required": ["expert_name", "description", "skills", "tools"],
@@ -386,11 +404,17 @@ def get_agents_from_text(text):
             "skills": ["python_programming", "game_development"],
             "tools": ["Python", "Pygame"],
         },
+        {
+            "expert_name": "Web Content Summarizer",
+            "description": "An AI agent that can fetch and summarize content from a provided URL.",
+            "skills": ["fetch_web_content"],  # The new skill
+            "tools": [],
+        },
     ]
-    
+
     ollama_request = {
         "model": st.session_state.model,
-        "prompt": f"""{system_prompt}\n\nSchema: {json.dumps(schema)}\n\nExample: {json.dumps(json_example)}\n\nYou are an expert system designed to identify and recommend the optimal team of experts required to fulfill this specific user's request: {text} Your analysis should consider the complexity, domain, and specific needs of the request to assemble a multidisciplinary team of experts. Each recommended expert should come with a defined role, a brief description of their expertise, their skill set, and the tools they would utilize to achieve the user's goal. The first agent must be qualified to manage the entire project, aggregate the work done by all the other agents, and produce a robust, complete, and reliable solution. Respond with ONLY a JSON array of experts, where each expert is an object adhering to the schema:""",
+        "prompt": f"""{system_prompt}\n\nAvailable Skills: {available_skills}\n\nSchema: {json.dumps(schema)}\n\nExample: {json.dumps(json_example)}\n\nYou are an expert system designed to identify and recommend the optimal team of experts required to fulfill this specific user's request: {text} Your analysis should consider the complexity, domain, and specific needs of the request to assemble a multidisciplinary team of experts. Each recommended expert should come with a defined role, a brief description of their expertise, their skill set, and the tools they would utilize to achieve the user's goal.  For skills, choose from the "Available Skills" list.  The first agent must be qualified to manage the entire project, aggregate the work done by all the other agents, and produce a robust, complete, and reliable solution. Respond with ONLY a JSON array of experts, where each expert is an object adhering to the schema:""",
         "options": {"temperature": temperature_value},
         "stream": False,
         "format": "json",  # KEEP THIS LINE
