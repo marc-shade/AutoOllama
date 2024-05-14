@@ -36,7 +36,7 @@ def create_agent_data(expert_name, description, skills, tools):
             "system_message": f"You are a helpful assistant that can act as {expert_name} who {description}."
         },
         "description": description,
-        "skills": skills,
+        "skills": skills,  # Add skills to the agent data
         "tools": tools
     }
     crewai_agent_data = {
@@ -89,6 +89,9 @@ def send_request_to_ollama_api(expert_name, request, api_key=None, stream=True):
 
 def extract_code_from_response(response):
     code_pattern = r"```(.*?)```"
+    code_blocks = re.findall(code_pattern, response, re.DOTALL)
+
+    html_pattern = r"```(.*?)```"
     code_blocks = re.findall(code_pattern, response, re.DOTALL)
 
     html_pattern = r"<html.*?>.*?</html>"
