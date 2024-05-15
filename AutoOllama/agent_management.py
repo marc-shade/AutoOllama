@@ -1,15 +1,18 @@
-# AutoOllama/agent_management.py
 import base64
 import streamlit as st
 import requests
 from bs4 import BeautifulSoup
 import os
 import re
+import io
+from PIL import Image
+import time # Import the time module
 
 from api_utils import send_request_to_ollama_api
 from file_utils import create_agent_data, load_skills # Import load_skills
 from ui_utils import get_api_key, update_discussion_and_whiteboard
 from skills.fetch_web_content import fetch_web_content  # Import for the new skill from the 'skills' subfolder
+
 
 def agent_button_callback(agent_index):
     # Callback function to handle state update and logic execution
@@ -24,10 +27,7 @@ def agent_button_callback(agent_index):
         st.session_state['form_agent_name'] = agent_name
         st.session_state['form_agent_description'] = agent['description'] if 'description' in agent else ''
 
-        # Set a flag to trigger a rerun in the main function
-        st.session_state['trigger_rerun'] = True 
-
-        # Directly call process_agent_interaction here if appropriate
+        # Directly call process_agent_interaction here 
         process_agent_interaction(agent_index)
         print("Session state AFTER:", st.session_state)  # Log session state AFTER
     return callback
@@ -133,6 +133,13 @@ def display_agents():
                         value=agent.get('enable_reading_html', False),
                         key=f"enable_reading_html_{edit_index}"
                     )
+
+                    # Checkbox for enabling/disabling 'generate_sd_images' skill
+                    agent['enable_image_creation'] = st.checkbox(
+                        "Add image creation skill to this Autogen agent",
+                        value=agent.get('enable_image_creation', False),
+                        key=f"enable_image_creation_{edit_index}"
+                    )
             # ** The 'else' block is no longer needed here **
         # **ENHANCED CLEANUP LOGIC ENDS HERE**
 
@@ -216,6 +223,8 @@ def download_agent_file(expert_name):
     else:
         st.error(f"File not found: {json_file}")
 
+
+
 def process_agent_interaction(agent_index):
     print("Processing agent interaction...")
     print("Session state:", st.session_state)  # Log the session state when this function is called
@@ -246,33 +255,65 @@ def process_agent_interaction(agent_index):
     # Reset the UI update flag
     st.session_state["update_ui"] = False
 
-    # Get the streaming response generator
-    response_generator = send_request_to_ollama_api(agent_name, request)
+    if agent.get('enable_image_creation', False):
+        response_text = generate_image_response(agent, request)
+    else:
+        response_text = generate_text_response(agent, request)
 
-    # Iterate through the response chunks
-    full_response = ""
-    for response_chunk in response_generator:
-        response_text = response_chunk.get("response", "")
-
-        # Check for skill calls in the response
-        for skill_name in available_skills:
-            if skill_name in response_text:
-                # For now, we assume skills are called by simply mentioning their name
-                #  We'll enhance skill calling with arguments in a later step.
-                skill_function = available_skills[skill_name]
-                skill_result = skill_function() # Execute the skill
-                response_text += f"\nSkill '{skill_name}' result: {skill_result}"
-
-        full_response += response_text  # Accumulate the full response
-        # Update the accumulated response in session state
-        st.session_state["accumulated_response"] = full_response
-        # Set the flag to trigger a rerun in the main loop
-        st.session_state['trigger_rerun'] = True
+    # Check for skill calls in the response (for other skills)
+    for skill_name in available_skills:
+        if skill_name in response_text and skill_name != 'generate_sd_images':
+            skill_function = available_skills[skill_name]
+            skill_result = skill_function()
+            response_text += f"\nSkill '{skill_name}' result: {skill_result}"
 
     # Update the UI with the full response outside the loop
-    update_discussion_and_whiteboard(agent_name, full_response, user_input)
+    update_discussion_and_whiteboard(agent_name, response_text, user_input)
    
     # Additionally, populate the sidebar form with the agent's information
     st.session_state['form_agent_name'] = agent_name
     st.session_state['form_agent_description'] = description
     st.session_state['selected_agent_index'] = agent_index  # Keep track of the selected agent for potential updates/deletes
+
+    st.session_state['trigger_rerun'] = True
+
+
+def generate_text_response(agent, request):
+    response_generator = send_request_to_ollama_api(agent["config"]["name"], request)
+    full_response = ""
+    for response_chunk in response_generator:
+        response_text = response_chunk.get("response", "")
+        full_response += response_text
+    return full_response
+
+def generate_image_response(agent, request):
+    image_query = st.session_state.get('discussion_history', '')
+    if 'shared_seed' in st.session_state:
+        code_to_execute = f"""
+from skills.generate_sd_images import generate_sd_images
+generate_sd_images(query=\"\"\"{image_query}\"\"\", seed={st.session_state['shared_seed']})
+"""
+    else:
+        import random
+        st.session_state['shared_seed'] = random.randint(0, 1000000)
+        code_to_execute = f"""
+from skills.generate_sd_images import generate_sd_images
+generate_sd_images(query=\"\"\"{image_query}\"\"\", seed={st.session_state['shared_seed']})
+"""
+
+    try:
+        exec(code_to_execute, globals())
+        image_paths = generate_sd_images(query=image_query)
+        time.sleep(1)
+
+        for image_path in image_paths:
+            with open(image_path, "rb") as f:
+                image_bytes = f.read()
+                st.image(image_bytes, caption=f"Generated Image: {image_path}")
+
+        response_text = f"Generated images using query: {image_query}"
+    except Exception as e:
+        print(f"Error executing generated code: {e}")
+        st.error(f"Error generating image: {e}")
+        response_text = f"Error generating image: {e}"
+    return response_text
