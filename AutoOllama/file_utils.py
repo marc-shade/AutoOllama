@@ -58,17 +58,18 @@ def create_workflow_data(workflow):
     return workflow
 
 def load_skills():
-    """Loads skills from JSON files in the 'skills' directory."""
+    """Loads skills from the 'skills' directory."""
     skills_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "skills"))
     skill_functions = {}
     for filename in os.listdir(skills_dir):
-        if filename.endswith(".json"):
-            filepath = os.path.join(skills_dir, filename)
-            with open(filepath, "r") as f:
-                skill_data = json.load(f)
-                skill_name = skill_data["name"]
-                skill_code = skill_data["code"][3:-3] # Remove the triple backticks
-                # Dynamically define the skill function using 'exec'
-                exec(skill_code, globals()) # Execute the code in the global scope
-                skill_functions[skill_name] = globals()[skill_name]  # Add the function to the dictionary
+        if filename.endswith(".py"):  # Load Python files
+            module_name = filename[:-3]  # Remove '.py' extension
+            try:
+                # Import the module dynamically
+                module = __import__(f"skills.{module_name}", fromlist=[module_name])
+                # Get the function from the module (assuming the function name is the same as the module name)
+                skill_function = getattr(module, module_name)
+                skill_functions[module_name] = skill_function
+            except ImportError as e:
+                print(f"Error importing skill from {filename}: {e}")
     return skill_functions
