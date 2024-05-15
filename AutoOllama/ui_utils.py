@@ -538,12 +538,9 @@ def zip_files_in_memory(agents_data, workflow_data, crewai_agents):
     # Add fetch_web_content.py to the Autogen ZIP if any agent has the skill
     for agent_data in agents_data.values():
         if "fetch_web_content" in agent_data.get("skills", []):
-            with open(
-                os.path.join("skills", "fetch_web_content.py"), "r"
-            ) as skill_file:
-                autogen_file_data["skills/fetch_web_content.py"] = (
-                    skill_file.read()
-                )
+            skills_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "skills"))
+            with open(os.path.join(skills_dir, "fetch_web_content.py"), "r") as f:
+                autogen_file_data["skills/fetch_web_content.py"] = f.read()
             break  # Only add the skill file once
 
     # Write workflow file to the Autogen ZIP
