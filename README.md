@@ -12,7 +12,7 @@ streamlit run AutoOllama/main.py
 
 <img src="https://2acrestudios.com/wp-content/uploads/2024/05/8pqr85.jpg" />
 
-<img src="https://2acrestudios.com/wp-content/uploads/2024/05/Screenshot-2024-05-13-at-11.39.39 AM.png" />
+<img src="https://2acrestudios.com/wp-content/uploads/2024/05/Screenshot-2024-05-15-at-2.07.40 PM.png" />
 
 **What the heck is...**
 # AutoGroq?
