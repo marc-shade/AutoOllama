@@ -19,7 +19,7 @@ def make_api_request(url, data, headers, api_key=None):
         return None
 
 
-def create_agent_data(expert_name, description, skills, tools):
+def create_agent_data(expert_name, description, skills, tools, enable_reading_html=False):  # Add enable_reading_html argument
     temperature_value = st.session_state.get('temperature', 0.1)
     autogen_agent_data = {
         "type": "assistant",
@@ -36,8 +36,9 @@ def create_agent_data(expert_name, description, skills, tools):
             "system_message": f"You are a helpful assistant that can act as {expert_name} who {description}."
         },
         "description": description,
-        "skills": skills,  # Add skills to the agent data
-        "tools": tools
+        "skills": skills,
+        "tools": tools,
+        "enable_reading_html": enable_reading_html
     }
     crewai_agent_data = {
         "name": expert_name,
