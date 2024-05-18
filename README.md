@@ -4,7 +4,7 @@
 
 -------
 ```
-streamlit run AutoOllama/main.py
+streamlit run TeamForgeAI/main.py
 ```
 
 -------
