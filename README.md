@@ -62,6 +62,9 @@ streamlit run main.py
 - Refine the agent's prompts dynamically based on the Discussion History context.
 
 **Skills:**
+
+<img src ="https://2acrestudios.com/wp-content/uploads/2024/05/00017-1652154938.png" align="right" style="width: 300px;" />
+
 The skills are implemented using a 'sure-shot' method, guaranteeing they will trigger without relying solely on an AI prompt. The skills are assigned to an agent, effectively switching them into a sort of 'tools mode' that mandates that they use the tool as a programmatic response. This avoids issues often seen in group chat situations where an agent hallucinates and pretends to run the skill script. When you push the agent button in TeamForgeAI, the agent will always use the skill.
 - 'Web Search' uses Serper and you must provide your API for this skill to function
 - 'Fetch Web Content' reads the content of a web page into the conversation
