@@ -315,6 +315,7 @@ def main():
         display_agents()
 
     with st.container():
+        display_virtual_office()
         discussions = list_discussions()
         selected_discussion = st.selectbox("Select Discussion", [""] + discussions, index=0)
         if selected_discussion:
@@ -324,8 +325,6 @@ def main():
         display_user_request_input()
         display_rephrased_request()
 
-        # --- Display Virtual Office ---
-        display_virtual_office()
 
         display_discussion_and_whiteboard()
 
