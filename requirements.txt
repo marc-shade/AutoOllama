@@ -1,9 +1,9 @@
-streamlit
-requests
-beautifulsoup4
-serpapi
-python-dotenv
-nltk
-pandas
-Pillow
+streamlit==1.34.0
+requests==2.32.2
+beautifulsoup4==4.12.3
+serpapi==0.1.5
+python-dotenv==1.0.1
+nltk==3.8.1
+pandas==2.2.2
+Pillow==9.3.0
 zipfile
