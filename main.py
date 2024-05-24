@@ -201,16 +201,18 @@ st.markdown(
         font-size: 30px; /* Default size */
         position: absolute;
         transition: left 1s, top 1s, font-size 0.5s; /* Adjust animation duration */
+        filter: brightness(0.5); /* Adjust the brightness value as needed */
     }
     .agent-emoji.active {
         font-size: 60px;
+        filter: brightness(1.1); /* Adjust the brightness value as needed */
     }
     /* Speech Bubble Styles */
     .speech-bubble {
         position: absolute;
         background-color: #333;;
         border-radius: 10px;
-        padding: 10px;
+        padding: 6px;
         font-size: 14px;
         margin-top: 10px;
         display: none; /* Hidden by default */
