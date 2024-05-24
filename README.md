@@ -1,4 +1,4 @@
-# TeamForgeAI
+<h1 style="color: red;">🦊🐻🐹 Team<span style="color: orange;">Forge</span><span style="color: yellow;">AI</span></h1>
 
 
 ## AI Agent Collaboration Platform
