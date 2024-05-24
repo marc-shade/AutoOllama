@@ -40,6 +40,8 @@ streamlit run main.py
 
 ## Usage
 
+<img src="https://2acrestudios.com/wp-content/uploads/2024/05/grid-0006.png" align="right" style="width: 300px;" />
+
 **Create Agents:**
 - Use the sidebar to define new agents.
 - Provide a name, description, select skills, and list tools for each agent.
