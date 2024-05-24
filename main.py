@@ -198,9 +198,12 @@ st.markdown(
         overflow: hidden;
     }
     .agent-emoji {
-        font-size: 40px;
+        font-size: 30px; /* Default size */
         position: absolute;
-        transition: left 1s, top 1s; /* Adjust animation duration */
+        transition: left 1s, top 1s, font-size 0.5s; /* Adjust animation duration */
+    }
+    .agent-emoji.active {
+        font-size: 60px;
     }
     </style>
     """,
@@ -238,6 +241,9 @@ def display_virtual_office():
         agent_name = agent_data["config"].get("name", f"Agent {i+1}")
         agent_emoji = agent_data.get("emoji", "❓")
 
+        # Apply active class if the agent is the active agent
+        active_class = "active" if agent_name == active_agent_name else ""
+
         if agent_name == active_agent_name:
             # Active agent at the top
             left_pos = 130  # Centered horizontally
@@ -247,7 +253,7 @@ def display_virtual_office():
             left_pos = random.randint(10, 250)
             top_pos = random.randint(80, 150)  # Adjust vertical range
 
-        agent_emojis += f'<span id="agent-{i}" class="agent-emoji" style="left: {left_pos}px; top: {top_pos}px;">{agent_emoji}</span>'
+        agent_emojis += f'<span id="agent-{i}" class="agent-emoji {active_class}" style="left: {left_pos}px; top: {top_pos}px;">{agent_emoji}</span>'
 
     st.markdown(office_html.format(agent_emojis), unsafe_allow_html=True)
 
