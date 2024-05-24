@@ -1,3 +1,9 @@
-streamlit==1.22.0
-requests==2.28.2
-beautifulsoup4==4.4.0
+streamlit
+requests
+beautifulsoup4
+serpapi
+python-dotenv
+nltk
+pandas
+Pillow
+zipfile
