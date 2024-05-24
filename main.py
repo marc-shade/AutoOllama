@@ -316,12 +316,7 @@ def main():
 
     with st.container():
         display_virtual_office()
-        discussions = list_discussions()
-        selected_discussion = st.selectbox("Select Discussion", [""] + discussions, index=0)
-        if selected_discussion:
-            st.session_state.selected_discussion = selected_discussion
-            st.session_state.discussion_history = load_discussion_history(selected_discussion)
-
+        
         display_user_request_input()
         display_rephrased_request()
 
@@ -337,6 +332,11 @@ def main():
             st.write(st.session_state.last_request)
 
         display_user_input()
+        discussions = list_discussions()
+        selected_discussion = st.selectbox("Load Previous Discussion", [""] + discussions, index=0)
+        if selected_discussion:
+            st.session_state.selected_discussion = selected_discussion
+            st.session_state.discussion_history = load_discussion_history(selected_discussion)
         display_download_button()
 
         if st.session_state.get("generate_image", False):
