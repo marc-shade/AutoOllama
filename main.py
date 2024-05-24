@@ -205,6 +205,20 @@ st.markdown(
     .agent-emoji.active {
         font-size: 60px;
     }
+    /* Speech Bubble Styles */
+    .speech-bubble {
+        position: absolute;
+        background-color: #333;;
+        border-radius: 10px;
+        padding: 10px;
+        font-size: 14px;
+        margin-top: 10px;
+        display: none; /* Hidden by default */
+        z-index: 1; /* Ensure it's above the emoji */
+    }
+    .agent-emoji.active + .speech-bubble {
+        display: block; /* Show only for active agent */
+    }
     </style>
     """,
     unsafe_allow_html=True,
@@ -254,6 +268,9 @@ def display_virtual_office():
             top_pos = random.randint(80, 150)  # Adjust vertical range
 
         agent_emojis += f'<span id="agent-{i}" class="agent-emoji {active_class}" style="left: {left_pos}px; top: {top_pos}px;">{agent_emoji}</span>'
+        # Add speech bubble for the active agent
+        if active_class:
+            agent_emojis += f'<div class="speech-bubble" style="left: {left_pos + 40}px; top: {top_pos - 30}px;">...</div>'
 
     st.markdown(office_html.format(agent_emojis), unsafe_allow_html=True)
 
