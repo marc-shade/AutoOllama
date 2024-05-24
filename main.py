@@ -191,14 +191,14 @@ st.markdown(
     }
     /* Virtual Office Styles */
     .virtual-office {
-        width: 300px; 
+        width: 32%; 
         height: 200px; 
         border: 1px solid #ccc;
         position: relative;
         overflow: hidden;
     }
     .agent-emoji {
-        font-size: 36px;
+        font-size: 40px;
         position: absolute;
         transition: left 1s, top 1s; /* Adjust animation duration */
     }
