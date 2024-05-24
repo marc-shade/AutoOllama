@@ -274,7 +274,7 @@ def display_virtual_office():
     st.markdown(animation_script, unsafe_allow_html=True)
 
 def main():
-    col1, col2, col3 = st.columns([2, 5, 3])
+    col1, col2, col3 = st.columns([3, 3, 3])
     with col1:
         st.text_input(
             "Endpoint",
@@ -282,6 +282,17 @@ def main():
             key="ollama_url_input",
         )
         st.session_state.ollama_url = st.session_state.ollama_url_input
+
+    with col2:
+        temperature = st.slider(
+            "Temperature",
+            min_value=0.0,
+            max_value=1.0,
+            value=st.session_state.get("temperature", 0.1),
+            step=0.01,
+            key="temperature",
+        )
+
 
     with col3:
         available_models = get_ollama_models()
@@ -295,15 +306,7 @@ def main():
         )
         st.query_params["model"] = [st.session_state.selected_model]  # Correct syntax
         st.session_state.model = st.session_state.selected_model  # Update model in session state
-        temperature = st.slider(
-            "Temperature",
-            min_value=0.0,
-            max_value=1.0,
-            value=st.session_state.get("temperature", 0.1),
-            step=0.01,
-            key="temperature",
-        )
-
+        
     with st.sidebar:
         st.markdown(
             '<div style="text-align: center;">'
