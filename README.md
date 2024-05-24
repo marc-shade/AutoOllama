@@ -11,6 +11,7 @@
 ## Features
 
 <img src ="https://2acrestudios.com/wp-content/uploads/2024/05/00016-1652154937.png" align="right" style="width: 300px;" />
+
 - **Agent Creation**: Design custom AI agents with unique names, descriptions, skills, and tools.
 - **Skill Integration**: Integrate custom Python skills that agents can utilize during interactions.
 - **Team Management**: Organize agents into teams for better project management.
