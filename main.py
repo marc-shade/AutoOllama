@@ -214,7 +214,7 @@ st.markdown(
         border-radius: 10px;
         padding: 6px;
         font-size: 14px;
-        margin-top: 10px;
+        margin-top: 16px;
         display: none; /* Hidden by default */
         z-index: 1; /* Ensure it's above the emoji */
     }
@@ -335,7 +335,7 @@ def main():
     with st.sidebar:
         st.markdown(
             '<div style="text-align: center;">'
-            '<h1 class="logo">🦊🐻🐹 TeamForgeAI</h1>'
+            '<h1 class="logo">🦊🐻🐹 Team<span style="color: orange;">Forge</span><span style="color: yellow;">AI</span></h1>'
             "</div>",
             unsafe_allow_html=True,
         )
