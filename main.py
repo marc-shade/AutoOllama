@@ -4,11 +4,12 @@ from datetime import datetime
 
 import requests
 import streamlit as st
+import random
 
 from agent_management import display_agents
 from ui.discussion import (
     display_discussion_and_whiteboard,
-    update_discussion_and_whiteboard,  # Corrected import
+    update_discussion_and_whiteboard,
 )
 from ui.inputs import (
     display_user_input,
@@ -24,8 +25,8 @@ from ui.utils import (
     get_workflow_from_agents,
     zip_files_in_memory,
 )
-from custom_button import agent_button  # Import the agent_button function
-from agent_interactions import generate_and_display_image  # Import generate_and_display_image here
+from custom_button import agent_button
+from agent_interactions import generate_and_display_image
 
 # Set up the page to use a wide layout
 st.set_page_config(layout="wide")
@@ -188,6 +189,19 @@ st.markdown(
     .main .stAlert {
         color: #333 !important;
     }
+    /* Virtual Office Styles */
+    .virtual-office {
+        width: 300px; 
+        height: 200px; 
+        border: 1px solid #ccc;
+        position: relative;
+        overflow: hidden;
+    }
+    .agent-emoji {
+        font-size: 36px;
+        position: absolute;
+        transition: left 1s, top 1s; /* Adjust animation duration */
+    }
     </style>
     """,
     unsafe_allow_html=True,
@@ -207,6 +221,57 @@ def get_ollama_models():
     except requests.exceptions.RequestException as e:
         st.error(f"Error fetching models: {e}")
         return []
+
+def display_virtual_office():
+    """Displays the virtual office with animated emojis."""
+    agents_data = st.session_state.get("agents_data", [])
+    active_agent_name = st.session_state.get("next_agent", None)  # Get the active agent
+
+    office_html = """
+    <div class="virtual-office">
+        {}  
+    </div>
+    """
+
+    agent_emojis = ""
+    for i, agent_data in enumerate(agents_data):
+        agent_name = agent_data["config"].get("name", f"Agent {i+1}")
+        agent_emoji = agent_data.get("emoji", "❓")
+
+        if agent_name == active_agent_name:
+            # Active agent at the top
+            left_pos = 130  # Centered horizontally
+            top_pos = 20
+        else:
+            # Other agents mill around below
+            left_pos = random.randint(10, 250)
+            top_pos = random.randint(80, 150)  # Adjust vertical range
+
+        agent_emojis += f'<span id="agent-{i}" class="agent-emoji" style="left: {left_pos}px; top: {top_pos}px;">{agent_emoji}</span>'
+
+    st.markdown(office_html.format(agent_emojis), unsafe_allow_html=True)
+
+    # JavaScript for animation (using string concatenation instead of .format())
+    animation_script = """
+    <script>
+    function animateAgents() {
+        const agents = document.querySelectorAll('.agent-emoji');
+        const activeAgent = '""" + (active_agent_name.replace(" ", "_") if active_agent_name else "") + """'; 
+
+        agents.forEach(agent => {
+            if (agent.id.includes(activeAgent)) return; // Don't animate the active agent
+
+            const leftPos = Math.random() * (250 - 10) + 10;
+            const topPos = Math.random() * (150 - 80) + 80; // Adjust vertical range
+            agent.style.left = leftPos + 'px';
+            agent.style.top = topPos + 'px';
+        });
+    }
+    setInterval(animateAgents, 1000); // Adjust animation interval
+    </script>
+    """
+
+    st.markdown(animation_script, unsafe_allow_html=True)
 
 def main():
     col1, col2, col3 = st.columns([2, 5, 3])
@@ -258,6 +323,10 @@ def main():
 
         display_user_request_input()
         display_rephrased_request()
+
+        # --- Display Virtual Office ---
+        display_virtual_office()
+
         display_discussion_and_whiteboard()
 
         # Append new comments from 'last_comment' to the discussion history
