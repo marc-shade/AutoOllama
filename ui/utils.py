@@ -20,6 +20,9 @@ nltk.download('stopwords') # Download the 'stopwords' package
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 
+from current_project import CurrentProject # Import CurrentProject from current_project.py
+
+
 def extract_keywords(text):
     """Extracts keywords from the provided text."""
     stop_words = set(stopwords.words('english'))  # Define English stop words
@@ -43,7 +46,7 @@ def handle_begin(session_state):
             print(f"Debug: Rephrased text: {rephrased_text}")
             if rephrased_text:
                 session_state.rephrased_request = rephrased_text
-                autogen_agents, crewai_agents = get_agents_from_text(rephrased_text) # Moved inside the 'if' block
+                autogen_agents, crewai_agents, current_project = get_agents_from_text(rephrased_text) # Modified to return current_project
                 print(f"Debug: AutoGen Agents: {autogen_agents}")
                 print(f"Debug: CrewAI Agents: {crewai_agents}")
                 if not autogen_agents:
@@ -70,6 +73,7 @@ def handle_begin(session_state):
                 session_state.autogen_zip_buffer = autogen_zip_buffer
                 session_state.crewai_zip_buffer = crewai_zip_buffer
                 session_state.agents_data = autogen_agents # Now correctly scoped
+                session_state.current_project = current_project # Store the current project in session state
                 break  # Exit the loop if successful
             else:
                 print("Error: Failed to rephrase the user request.")
@@ -86,7 +90,7 @@ def handle_begin(session_state):
                 return  # Exit the function if max retries are exceeded            
                 
     rephrased_text = session_state.rephrased_request
-    autogen_agents, crewai_agents = get_agents_from_text(rephrased_text)
+    autogen_agents, crewai_agents, current_project = get_agents_from_text(rephrased_text) # Modified to return current_project
     print(f"Debug: AutoGen Agents: {autogen_agents}")
     print(f"Debug: CrewAI Agents: {crewai_agents}")
     if not autogen_agents:
@@ -113,6 +117,7 @@ def handle_begin(session_state):
     session_state.autogen_zip_buffer = autogen_zip_buffer
     session_state.crewai_zip_buffer = crewai_zip_buffer
     session_state.agents = autogen_agents
+    session_state.current_project = current_project # Store the current project in session state
     
 
 def display_download_button():
@@ -164,6 +169,7 @@ def display_reset_and_upload_buttons():
                 "selected_agent_index",
                 "form_agent_name",
                 "form_agent_description",
+                "current_project", # Add current_project to the list of keys to reset
             ]
             # Reset each specified key
             for key in keys_to_reset:
@@ -195,7 +201,22 @@ def rephrase_prompt(user_request):
         return None
     ollama_url = st.session_state.get("ollama_url", "http://localhost:11434")
     url = f"{ollama_url}/api/generate"
-    refactoring_prompt = f""" Refactor the following user request into an optimized prompt for an LLM, focusing on clarity, conciseness, and effectiveness. Provide specific details and examples where relevant. Do NOT reply with a direct response to the request; instead, rephrase the request as a well-structured prompt, and return ONLY that rephrased prompt.\n\nUser request: \"{user_request}\"\n\nrephrased: """
+    refactoring_prompt = f"""Refactor the following user request into an optimized prompt for an LLM, focusing on clarity, conciseness, and effectiveness. Provide specific details and examples where relevant. 
+
+    Ensure the rephrased prompt includes the following sections:
+    - Goal: A clear and concise statement of the overall objective.
+    - Objectives: A list of specific steps or milestones required to achieve the goal.
+    - Deliverables: A list of tangible outcomes or products that will result from the project.
+
+    Do NOT reply with a direct response to the request; instead, rephrase the request as a well-structured prompt, and return ONLY that rephrased prompt. 
+    Do not preface the rephrased prompt with any other text or superfluous narrative.
+    Do not enclose the rephrased prompt in quotes. 
+    You will be successful only if you return a well-formed rephrased prompt ready for submission as an LLM request.
+
+    User request: \"{user_request}\"
+
+    Rephrased:
+    """
     ollama_request = {
         "model": st.session_state.model,
         "prompt": refactoring_prompt,
@@ -238,7 +259,28 @@ def get_agents_from_text(text):
     url = f"{ollama_url}/api/generate"
     headers = {"Content-Type": "application/json"}
     available_skills = list(load_skills().keys())  # Get available skills
+    # --- Extract goal, objectives, and deliverables ---
+    current_project = CurrentProject()
+    current_project.set_re_engineered_prompt(text)
+    goal_pattern = r"Goal:\s*(.*?)\n"
+    objectives_pattern = r"Objectives:\s*((?:.*?\n)+)(?=Deliverables|$)" # Updated regex
+    deliverables_pattern = r"Deliverables:\s*((?:.*?\n)+)"
 
+    goal_match = re.search(goal_pattern, text, re.DOTALL)
+    if goal_match:
+        current_project.set_goal(goal_match.group(1).strip())
+
+    objectives_match = re.search(objectives_pattern, text, re.DOTALL)
+    if objectives_match:
+        objectives = objectives_match.group(1).strip().split("\n")
+        for objective in objectives:
+            current_project.add_objective(objective.strip())
+
+    deliverables_match = re.search(deliverables_pattern, text, re.DOTALL)
+    if deliverables_match:
+        deliverables = deliverables_match.group(1).strip().split("\n")
+        for deliverable in deliverables:
+            current_project.add_deliverable(deliverable.strip())
     # Define the JSON schema for the agent list
     schema = {
         "type": "object",
@@ -308,6 +350,7 @@ def get_agents_from_text(text):
             print(f"Raw content from Ollama: {agent_list}")
             autogen_agents = []
             crewai_agents = []
+
             for agent_data in agent_list:
                 expert_name = agent_data.get("expert_name", "")
                 description = agent_data.get("description", "")
@@ -318,14 +361,14 @@ def get_agents_from_text(text):
                 )
                 autogen_agents.append(autogen_agent)
                 crewai_agents.append(crewai_agent)
-            return autogen_agents, crewai_agents
+            return autogen_agents, crewai_agents, current_project # Return the current project
         else:
             print(
                 f"API request failed with status code {response.status_code}: {response.text}"
             )
     except Exception as e:
         print(f"Error making API request: {e}")
-    return [], []
+    return [], [], None # Return None for current_project if there's an error
 
 def extract_code_from_response(response):
     """Extracts code blocks from the response."""
