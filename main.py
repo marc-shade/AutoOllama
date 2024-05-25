@@ -1,3 +1,4 @@
+# TeamForgeAI/main.py
 import os
 import time
 from datetime import datetime
@@ -27,6 +28,9 @@ from ui.utils import (
 )
 from custom_button import agent_button
 from agent_interactions import generate_and_display_image
+
+from current_project import CurrentProject # Import CurrentProject from current_project.py
+
 
 # Set up the page to use a wide layout
 st.set_page_config(layout="wide")
@@ -210,13 +214,15 @@ st.markdown(
     /* Speech Bubble Styles */
     .speech-bubble {
         position: absolute;
-        background-color: #333;;
+        background-color: #333;
+        color: #ccc;
         border-radius: 10px;
         padding: 6px;
         font-size: 14px;
         margin-top: 16px;
-        display: none; /* Hidden by default */
-        z-index: 1; /* Ensure it's above the emoji */
+        margin-left: 20px;
+        display: none;
+        z-index: 0;
     }
     .agent-emoji.active + .speech-bubble {
         display: block; /* Show only for active agent */
@@ -245,6 +251,7 @@ def display_virtual_office():
     """Displays the virtual office with animated emojis."""
     agents_data = st.session_state.get("agents_data", [])
     active_agent_name = st.session_state.get("next_agent", None)  # Get the active agent
+    last_comment = st.session_state.get("last_comment", "")[:90]  # Get the last comment (first 50 characters)
 
     office_html = """
     <div class="virtual-office">
@@ -270,9 +277,9 @@ def display_virtual_office():
             top_pos = random.randint(80, 150)  # Adjust vertical range
 
         agent_emojis += f'<span id="agent-{i}" class="agent-emoji {active_class}" style="left: {left_pos}px; top: {top_pos}px;">{agent_emoji}</span>'
-        # Add speech bubble for the active agent
+        # Add speech bubble for the active agent with the last comment and '...'
         if active_class:
-            agent_emojis += f'<div class="speech-bubble" style="left: {left_pos + 40}px; top: {top_pos - 30}px;">...</div>'
+            agent_emojis += f'<div class="speech-bubble" style="left: {left_pos + 40}px; top: {top_pos - 30}px;">{last_comment}...</div>'
 
     st.markdown(office_html.format(agent_emojis), unsafe_allow_html=True)
 
@@ -297,6 +304,41 @@ def display_virtual_office():
     """
 
     st.markdown(animation_script, unsafe_allow_html=True)
+
+class CurrentProject:
+    def __init__(self):
+        self.re_engineered_prompt = ""
+        self.objectives = []
+        self.deliverables = []
+        self.goal = ""
+
+    def set_re_engineered_prompt(self, prompt):
+        self.re_engineered_prompt = prompt
+
+    def add_objective(self, objective):
+        self.objectives.append({"text": objective, "done": False})
+
+    def add_deliverable(self, deliverable):
+        self.deliverables.append({"text": deliverable, "done": False})
+
+    def set_goal(self, goal):
+        self.goal = goal
+
+    def mark_objective_done(self, index):
+        if 0 <= index < len(self.objectives):
+            self.objectives[index]["done"] = True
+
+    def mark_deliverable_done(self, index):
+        if 0 <= index < len(self.deliverables):
+            self.deliverables[index]["done"] = True
+
+    def mark_objective_undone(self, index):
+        if 0 <= index < len(self.objectives):
+            self.objectives[index]["done"] = False
+
+    def mark_deliverable_undone(self, index):
+        if 0 <= index < len(self.deliverables):
+            self.deliverables[index]["done"] = False
 
 def main():
     col1, col2, col3 = st.columns([3, 3, 3])
