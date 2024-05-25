@@ -8,7 +8,7 @@ from api_utils import send_request_to_ollama_api
 from file_utils import load_skills
 from skills.fetch_web_content import fetch_web_content
 from skills.generate_sd_images import generate_sd_images
-from ui.discussion import update_discussion_and_whiteboard  # Corrected import
+from ui.discussion import update_discussion_and_whiteboard
 from ui.utils import extract_keywords  # Import extract_keywords
 
 
