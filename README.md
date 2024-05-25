@@ -12,13 +12,17 @@
 
 <img src ="https://2acrestudios.com/wp-content/uploads/2024/05/00016-1652154937.png" align="right" style="width: 300px;" />
 
-- **Agent Creation**: Design custom AI agents with unique names, descriptions, skills, and tools.
-- **Skill Integration**: Integrate custom Python skills that agents can utilize during interactions.
-- **Team Management**: Organize agents into teams for better project management.
-- **Collaborative Workflow**: Engage agents in a group chat, facilitating collaborative problem-solving.
-- **Discussion History**: Maintain a record of all agent interactions for reference and analysis.
-- **Code Generation and Execution**: Agents can generate and execute code snippets within the chat.
-- **File Download**: Download agent configurations and workflows for easy sharing and deployment.
+- **AI-Powered Agent Creation:** Generate specialized AI agents based on your project description. Each agent possesses unique skills and tools tailored to their role.
+- **Collaborative Workflow:** Agents interact and collaborate to solve problems, generate ideas, and complete tasks.
+- **Project Goal, Objectives, and Deliverables:** Define and track your project's overall goal, specific objectives, and tangible deliverables.
+- **Skill Integration:** Integrate custom Python skills to extend agent capabilities and automate tasks.
+- **Web Search and Content Summarization:** Agents can perform web searches and summarize content from provided URLs.
+- **Image Generation:** Generate images using Stable Diffusion, powered by the Automatic1111 API.
+- **Interactive Discussion and Whiteboard:** Track agent interactions, share ideas, and store code snippets on a virtual whiteboard.
+- **Downloadable Agent and Workflow Files:** Export agents and workflows as JSON files for use in AutoGen and CrewAI.
+- **Team Management:** Create and manage teams of agents, allowing for flexible collaboration and organization.
+- **Visual Virtual Office:** An engaging virtual office with animated emojis representing each agent, providing a fun and intuitive way to visualize agent interactions.
+
 
 ## Installation
 
@@ -75,9 +79,21 @@ The skills are implemented using a 'sure-shot' method, guaranteeing they will tr
 - 'Fetch Web Content' reads the content of a web page into the conversation
 - 'Generate SD Images' creates an image based on the conversation context
 
+TeamForgeAI supports custom Python skills that can be integrated into agents. To create a new skill:
+1. Create a new Python file in the skills directory.
+2. Define a function with the same name as the skill.
+3. Add a docstring to describe the skill's functionality.
+4. Save the file with a .py extension.
+5. The skill will be automatically loaded and available for assignment to agents.
+
 **Review and Download:**
 - The discussion history is preserved for future reference.
 - Download agent configurations and workflows as needed.
+
+Examples: 
+- Write a children's book: Request TeamForgeAI to create a children's book about a llama. Agents such as a "Children's Book Writer", "Illustrator", and "Language Specialist" will be generated to collaborate on the project.
+- Develop a marketing plan: Ask TeamForgeAI to develop a marketing plan for a new product. Agents like a "Market Research Analyst", "Content Creator", and "Social Media Manager" will work together to create a comprehensive plan.
+- Build a website: Request TeamForgeAI to build a website for your business. Agents such as a "Web Developer", "Designer", and "Content Writer" will collaborate to bring your website to life.
 
 ## Contributing
 
