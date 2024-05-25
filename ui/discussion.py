@@ -7,8 +7,8 @@ def display_discussion_and_whiteboard():
     """Displays the discussion history and whiteboard in separate tabs."""
     if "discussion_history" not in st.session_state:
         st.session_state.discussion_history = ""
-    tab1, tab2, tab3 = st.tabs(
-        ["Most Recent Comment", "Whiteboard", "Discussion History"]
+    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(
+        ["Most Recent Comment", "Whiteboard", "Discussion History", "Objectives", "Deliverables", "Goal"]
     )
     with tab1:  # Display the most recent comment in the first tab
         st.text_area(
@@ -26,6 +26,36 @@ def display_discussion_and_whiteboard():
         )
     with tab3:  # Display the full discussion history in the third tab
         st.write(st.session_state.discussion_history)
+    with tab4:
+        if "current_project" in st.session_state:
+            current_project = st.session_state.current_project
+            for index, objective in enumerate(current_project.objectives):
+                checkbox_key = f"objective_{index}"
+                done = st.checkbox(objective["text"], value=objective["done"], key=checkbox_key)
+                if done != objective["done"]:
+                    if done:
+                        current_project.mark_objective_done(index)
+                    else:
+                        current_project.mark_objective_undone(index)
+        else:
+            st.warning("No objectives found. Please enter a user request.")
+    with tab5:
+        if "current_project" in st.session_state:
+            current_project = st.session_state.current_project
+            for index, deliverable in enumerate(current_project.deliverables):
+                checkbox_key = f"deliverable_{index}"
+                done = st.checkbox(deliverable["text"], value=deliverable["done"], key=checkbox_key)
+                if done != deliverable["done"]:
+                    if done:
+                        current_project.mark_deliverable_done(index)
+                    else:
+                        current_project.mark_deliverable_undone(index)
+    with tab6:
+        if "current_project" in st.session_state:
+            current_project = st.session_state.current_project
+            st.text_area("Goal", value=current_project.goal, height=100, key="goal_area")
+        else:
+            st.warning("No goal found. Please enter a user request.")
 
 
 def display_discussion_modal():
