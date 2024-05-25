@@ -5,7 +5,7 @@
 
 **TeamForgeAI** is a platform designed for creating, managing, and collaborating with AI agents. Built using Streamlit, this application allows you to define agents with specific skills and expertise, and then engage them in a group chat setting to solve tasks collaboratively.
 
-<img src="https://2acrestudios.com/wp-content/uploads/2024/05/Screenshot-2024-05-24-at-4.01.15 PM.png" />
+<img src="https://2acrestudios.com/wp-content/uploads/2024/05/Screenshot-2024-05-25-at-11.43.01 AM.png" />
 
 
 ## Features
