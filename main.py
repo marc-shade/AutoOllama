@@ -191,7 +191,7 @@ st.markdown(
     }
     /* Virtual Office Styles */
     .virtual-office {
-        width: 100%; 
+        width: 400px; 
         height: 200px; 
         border: 1px solid #ccc;
         position: relative;
