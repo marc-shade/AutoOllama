@@ -28,6 +28,11 @@ git clone https://github.com/your-username/TeamForgeAI.git
 cd TeamForgeAI
 ```
 
+Create virtual environment:
+```bash
+conda create --name teamforge python=3.11
+```
+
 Install dependencies:
 ```bash
 pip install -r requirements.txt
