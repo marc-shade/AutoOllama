@@ -32,21 +32,26 @@ def project_management(query: str = ""):
 
         return objectives_str + "\n" + deliverables_str # Return both objectives and deliverables
 
-    # Handle commands for managing objectives
+    # Handle commands for managing objectives and deliverables
     commands = {
-        "add": lambda obj: current_project.add_objective(obj),
-        "done": lambda index: current_project.mark_objective_done(int(index) - 1),
-        "undone": lambda index: current_project.mark_objective_undone(int(index) - 1),
+        "add objective": lambda obj: current_project.add_objective(obj),
+        "done objective": lambda index: current_project.mark_objective_done(int(index) - 1),
+        "undone objective": lambda index: current_project.mark_objective_undone(int(index) - 1),
+        "add deliverable": lambda obj: current_project.add_deliverable(obj),
+        "done deliverable": lambda index: current_project.mark_deliverable_done(int(index) - 1),
+        "undone deliverable": lambda index: current_project.mark_deliverable_undone(int(index) - 1),
     }
 
     # Parse the query to extract the command and argument
-    match = re.match(r"(\w+)\s*(.*)", query)
+    match = re.match(r"(\w+\s+\w+)\s*(.*)", query) # Modified regex to capture two words for command
     if match:
         command, arg = match.groups()
         if command in commands:
             try:
                 commands[command](arg)
-                return f"Objective {command} successfully."
+                st.session_state.current_project = current_project # Update the session state
+                st.experimental_rerun() # Trigger a rerun to reflect the changes
+                return f"{command} successfully."
             except Exception as e:
                 return f"Error: {e}"
         else:
