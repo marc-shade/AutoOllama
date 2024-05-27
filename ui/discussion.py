@@ -2,13 +2,14 @@
 import streamlit as st
 
 from ui.utils import extract_code_from_response # You'll need this import
+from api_utils import get_ollama_models
 
 def display_discussion_and_whiteboard():
     """Displays the discussion history and whiteboard in separate tabs."""
     if "discussion_history" not in st.session_state:
         st.session_state.discussion_history = ""
-    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(
-        ["Most Recent Comment", "Whiteboard", "Discussion History", "Objectives", "Deliverables", "Goal"]
+    tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs(
+        ["Most Recent Comment", "Whiteboard", "Discussion History", "Objectives", "Deliverables", "Goal", "Chat Manager"]
     )
     with tab1:  # Display the most recent comment in the first tab
         st.text_area(
@@ -56,6 +57,38 @@ def display_discussion_and_whiteboard():
             st.text_area("Goal", value=current_project.goal, height=100, key="goal_area")
         else:
             st.warning("No goal found. Please enter a user request.")
+    with tab7:
+        col3, col4, col5 = st.columns([3, 3, 3])
+        with col3:
+            st.text_input(
+                "Endpoint",
+                value=st.session_state.ollama_url_input,
+                key="ollama_url_input",
+            )
+            st.session_state.ollama_url = st.session_state.ollama_url_input
+
+        with col4:
+            temperature = st.slider(
+                "Temperature",
+                min_value=0.0,
+                max_value=1.0,
+                value=st.session_state.get("temperature", 0.1),
+                step=0.01,
+                key="temperature",
+            )
+
+        with col5:
+            available_models = get_ollama_models(st.session_state.ollama_url) # Pass the endpoint to get_ollama_models
+            st.session_state.selected_model = st.selectbox(
+                "Model",
+                options=available_models,
+                index=available_models.index(st.session_state.selected_model)
+                if st.session_state.selected_model in available_models
+                else 0,
+                key="model_selection",
+            )
+            st.query_params["model"] = [st.session_state.selected_model]  # Correct syntax
+            st.session_state.model = st.session_state.selected_model  # Update model in session state
 
 
 def display_discussion_modal():
