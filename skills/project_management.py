@@ -1,6 +1,7 @@
 # TeamForgeAI/skills/project_management.py
 import streamlit as st
 import re
+from current_project import CurrentProject # Import CurrentProject
 
 def project_management(query: str = ""):
     """
@@ -58,3 +59,17 @@ def project_management(query: str = ""):
             return f"Error: Invalid command '{command}'."
     else:
         return "Error: Invalid query format."
+
+def update_checklists(discussion_history: str, current_project: CurrentProject):
+    """
+    Analyzes the discussion history and updates the Objectives and Deliverables lists.
+    """
+    # Implement logic to identify completed objectives and deliverables
+    # For now, let's just check if the objective/deliverable text is present in the discussion history
+    for i, obj in enumerate(current_project.objectives):
+        if obj["text"] in discussion_history:
+            current_project.mark_objective_done(i)
+
+    for i, deliverable in enumerate(current_project.deliverables):
+        if deliverable["text"] in discussion_history:
+            current_project.mark_deliverable_done(i)
