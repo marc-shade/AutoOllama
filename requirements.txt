@@ -6,5 +6,5 @@ python-dotenv==1.0.1
 nltk==3.8.1
 pandas==2.2.2
 Pillow==9.3.0
-zipfile
 uuid
+matplotlib
