@@ -10,7 +10,7 @@ def sanitize_text(text):
 
 emoji_list = ["🐶", "🐱", "🐭", "🐹", "🐰", "🦊", "🐻", "🐼", "🐻‍❄️", "🐨", "🐯", "🦁", "🐮", "🐷", "🐸", "🐵", "🐔", "🐧", "🐦", "🐤", "🐣", "🐥", "🦆", "🦅", "🦉", "🦇", "🐺", "🐗", "🐴", "🦄", "🐝", "🐛", "🦋", "🐌", "🐞", "🐜", "🪲", "🪳", "🪰", "🪱", "🐢", "🐍", "🦎", "🦖", "🦕", "🐙", "🦑", "🦐", "🦞", "🦀", "🐡", "🐠", "🐟", "🐬", "🐳", "🐋", "🦈", "🐊", "🐅", "🐆", "🦓", "🦍", "🦧", "🦣", "🐘", "🦏", "🦛", "🐪", "🐫", "🦒", "🦘", "🦬", "🐃", "🐂", "🐄", "🐎", "🐖", "🐏", "🐑", "🦙", "🐐", "🦌", "🦝", "🦡", "🦃", "🦚", "🦜", "🦢", "🦩", "🕊️", "🦤", "🐉", "🐲", "🌵"]
 
-def create_agent_data(expert_name, description, skills=None, tools=None, enable_reading_html=False, ollama_url="http://localhost:11434", temperature=0.10, model=None): # Add agent-specific settings and defaults
+def create_agent_data(expert_name, description, skills=None, tools=None, enable_reading_html=False, ollama_url="http://localhost:11434", temperature=0.10, model="mistral:7b-instruct-v0.2-q8_0"): # Add agent-specific settings and defaults
     # Format the expert_name
     formatted_expert_name = sanitize_text(expert_name)
     formatted_expert_name = formatted_expert_name.lower().replace(" ", "_")
@@ -27,7 +27,7 @@ def create_agent_data(expert_name, description, skills=None, tools=None, enable_
             "llm_config": {
                 "config_list": [
                     {
-                        "model": "llama3:8b"  # Default to Llama3
+                        "model": model  # Default to Llama3
                     }
                 ],
                 "temperature": temperature, # Use agent-specific temperature or default
