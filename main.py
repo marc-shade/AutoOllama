@@ -68,6 +68,8 @@ if "current_discussion" not in st.session_state:
     st.session_state.current_discussion = ""
 if "selected_background" not in st.session_state:
     st.session_state.selected_background = ""  # Ensure it's defined
+if "current_project" not in st.session_state: # Initialize current_project
+    st.session_state.current_project = CurrentProject()
 
 # Directory for saving discussion history
 project_dir = 'project'
@@ -392,38 +394,6 @@ def main():
         display_rephrased_request()
         display_user_input()
 
-    col3, col4, col5 = st.columns([3, 3, 3])
-    with col3:
-        st.text_input(
-            "Endpoint",
-            value=st.session_state.ollama_url_input,
-            key="ollama_url_input",
-        )
-        st.session_state.ollama_url = st.session_state.ollama_url_input
-
-    with col4:
-        temperature = st.slider(
-            "Temperature",
-            min_value=0.0,
-            max_value=1.0,
-            value=st.session_state.get("temperature", 0.1),
-            step=0.01,
-            key="temperature",
-        )
-
-    with col5:
-        available_models = get_ollama_models(st.session_state.ollama_url) # Pass the endpoint to get_ollama_models
-        st.session_state.selected_model = st.selectbox(
-            "Model",
-            options=available_models,
-            index=available_models.index(st.session_state.selected_model)
-            if st.session_state.selected_model in available_models
-            else 0,
-            key="model_selection",
-        )
-        st.query_params["model"] = [st.session_state.selected_model]  # Correct syntax
-        st.session_state.model = st.session_state.selected_model  # Update model in session state
-        
     with st.sidebar:
         st.markdown(
             '<div style="text-align: center;">'
