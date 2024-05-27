@@ -1,15 +1,16 @@
 # TeamForgeAI/ui/discussion.py
 import streamlit as st
+import os
 
 from ui.utils import extract_code_from_response # You'll need this import
-from api_utils import get_ollama_models
+from api_utils import get_ollama_models # Import get_ollama_models
 
 def display_discussion_and_whiteboard():
     """Displays the discussion history and whiteboard in separate tabs."""
     if "discussion_history" not in st.session_state:
         st.session_state.discussion_history = ""
-    tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs(
-        ["Most Recent Comment", "Whiteboard", "Discussion History", "Objectives", "Deliverables", "Goal", "Chat Manager"]
+    tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8 = st.tabs(
+        ["Most Recent Comment", "Whiteboard", "Gallery", "Discussion History", "Objectives", "Deliverables", "Goal", "Chat Manager"]
     )
     with tab1:  # Display the most recent comment in the first tab
         st.text_area(
@@ -25,9 +26,11 @@ def display_discussion_and_whiteboard():
             height=400,
             key="whiteboard",
         )
-    with tab3:  # Display the full discussion history in the third tab
+    with tab3: # Display the gallery in the third tab
+        display_gallery()
+    with tab4:  # Display the full discussion history in the third tab
         st.write(st.session_state.discussion_history)
-    with tab4:
+    with tab5:
         if "current_project" in st.session_state:
             current_project = st.session_state.current_project
             for index, objective in enumerate(current_project.objectives):
@@ -40,7 +43,7 @@ def display_discussion_and_whiteboard():
                         current_project.mark_objective_undone(index)
         else:
             st.warning("No objectives found. Please enter a user request.")
-    with tab5:
+    with tab6:
         if "current_project" in st.session_state:
             current_project = st.session_state.current_project
             for index, deliverable in enumerate(current_project.deliverables):
@@ -51,13 +54,13 @@ def display_discussion_and_whiteboard():
                         current_project.mark_deliverable_done(index)
                     else:
                         current_project.mark_deliverable_undone(index)
-    with tab6:
+    with tab7:
         if "current_project" in st.session_state:
             current_project = st.session_state.current_project
             st.text_area("Goal", value=current_project.goal, height=100, key="goal_area")
         else:
             st.warning("No goal found. Please enter a user request.")
-    with tab7:
+    with tab8:
         col3, col4, col5 = st.columns([3, 3, 3])
         with col3:
             st.text_input(
@@ -114,3 +117,17 @@ def update_discussion_and_whiteboard(expert_name, response, user_input): # Funct
     st.session_state.last_comment = response_text
     print(f"Last Agent: {st.session_state.last_agent}")
     print(f"Last Comment: {st.session_state.last_comment}")
+
+def display_gallery():
+    """Displays the images in the 'images' folder."""
+    image_dir = "images"
+    if os.path.exists(image_dir):
+        images = [f for f in os.listdir(image_dir) if f.endswith((".png", ".jpg", ".jpeg"))]
+        if images:
+            for image in images:
+                image_path = os.path.join(image_dir, image)
+                st.image(image_path, caption=image, use_column_width=True)
+        else:
+            st.write("No images found in the 'images' folder.")
+    else:
+        st.write("The 'images' folder does not exist.")
