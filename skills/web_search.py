@@ -16,7 +16,7 @@ def web_search(query: str, search_engine: str = "google", result_count: int = 3)
     params = {
         "engine": search_engine,
         "q": query,
-        "api_key": "YOUR KEY GOES HERE", # Replace with your actual SerpApi key (https://serpapi.com/manage-api-key)
+        "api_key": "ba2ee816eb00ac05f6e9d113e7ff19b665136717913f21340eef6d4d2e1be4c4", # Replace with your actual SerpApi key
         "num": result_count, # Number of results to retrieve
     }
 
