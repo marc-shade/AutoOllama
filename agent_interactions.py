@@ -9,6 +9,7 @@ from api_utils import send_request_to_ollama_api
 from file_utils import load_skills
 from skills.fetch_web_content import fetch_web_content
 from skills.generate_sd_images import generate_sd_images
+from skills.project_management import update_checklists # Import the new function
 from ui.discussion import update_discussion_and_whiteboard  # Corrected import
 from ui.utils import extract_keywords  # Import extract_keywords
 
@@ -111,6 +112,11 @@ def process_agent_interaction(agent_index):
     st.session_state["form_agent_description"] = description
     st.session_state["selected_agent_index"] = agent_index
     st.session_state["trigger_rerun"] = True
+
+    # --- Update checklists after agent interaction ---
+    if "Project Manager" in agent_name or agent_name == "Chat Manager":
+        update_checklists(st.session_state.discussion_history, st.session_state.current_project)
+        st.session_state["trigger_rerun"] = True # Trigger a rerun to reflect the changes
 
 
 def generate_and_display_image(query):
