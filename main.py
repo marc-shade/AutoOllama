@@ -2,6 +2,7 @@
 import os
 import time
 from datetime import datetime
+import base64  # Import the base64 module
 
 import requests
 import streamlit as st
@@ -28,8 +29,9 @@ from ui.utils import (
 )
 from custom_button import agent_button
 from agent_interactions import generate_and_display_image
+from api_utils import get_ollama_models # Import get_ollama_models from api_utils.py
 
-from current_project import CurrentProject # Import CurrentProject from current_project.py
+from current_project import CurrentProject  # Import CurrentProject from current_project.py
 
 
 # Set up the page to use a wide layout
@@ -64,6 +66,8 @@ if "selected_discussion" not in st.session_state:
     st.session_state.selected_discussion = ""
 if "current_discussion" not in st.session_state:
     st.session_state.current_discussion = ""
+if "selected_background" not in st.session_state:
+    st.session_state.selected_background = ""  # Ensure it's defined
 
 # Directory for saving discussion history
 project_dir = 'project'
@@ -96,36 +100,38 @@ if st.session_state.selected_discussion:
     loaded_history = load_discussion_history(st.session_state.selected_discussion)
     st.session_state.discussion_history = loaded_history
 
-st.markdown(
-    """
+
+# --- Function to format markdown with background image ---
+def background_markdown(background_image):
+    return f"""
     <style>
     /* General styles */
-    body {
+    body {{
         font-family: 'Courier New', sans-serif!important;
         background-color: #f0f0f0;
-    }
+    }}
     /* Sidebar styles */
-    .sidebar .sidebar-content {
+    .sidebar .sidebar-content {{
         background-color: #ffffff !important;
         padding: 0px !important;
         border-radius: 5px !important;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
-    }
-    h1 {
+    }}
+    h1 {{
         font-size: 40px !important;
         color: #666666 !important;
         font-family: 'Open Sans'!important;
-    }
-    h2 {
+    }}
+    h2 {{
         font-size: 16px !important;
         color: #666666 !important;
         font-family: 'Open Sans'!important;
-    }
-    .logo {
+    }}
+    .logo {{
         font-size: 50px !important;
         color: red!important;
-    }
-    .sidebar .stButton button {
+    }}
+    .sidebar .stButton button {{
         display: block !important;
         width: 100% !important;
         padding: 0px !important;
@@ -135,41 +141,40 @@ st.markdown(
         text-decoration: none !important;
         border-radius: 5px !important;
         transition: background-color 0.3s !important;
-    }
-    .sidebar .stButton button:hover {
+    }}
+    .sidebar .stButton button:hover {{
         background-color: #0056b3 !important;
-    }
-    .sidebar a {
-        display: block !important;
-        color: #007bff !important;
+    }}
+    .sidebar a {{
+        display: block !important;       color: #007bff !important;
         text-decoration: none !important;
-    }
-    .sidebar a:hover {
+    }}
+    .sidebar a:hover {{
         text-decoration: underline !important;
-    }
+    }}
     /* Main content styles */
-    .main .stTextInput input {
+    .main .stTextInput input {{
         width: 100% !important;
         padding: 10px !important;
         border: 1px solid #cccccc !important;
         border-radius: 5px !important;
         font-family: 'Courier New', sans-serif!important;
-    }
-    .main .stTextArea textarea {
+    }}
+    .main .stTextArea textarea {{
         width: 100% !important;
         padding: 10px !important;
         border: 1px solid #cccccc !important;
         border-radius: 5px !important;
         resize: none !important;
         font-family: 'Courier New', sans-serif!important;
-    }
-    button {
+    }}
+    button {{
         padding: 8px !important;
         color: #ffffff ! important;
         cursor: pointer !important;
         margin: 0!important;
-    }
-    .main .stButton button {
+    }}
+    .main .stButton button {{
         padding: 0px 0px !important;
         background-color: #dc3545 !important;
         color: #ffffff !important;
@@ -177,42 +182,56 @@ st.markdown(
         border-radius: 5px !important;
         cursor: pointer !important;
         transition: background-color 0.3s !important;
-    }
-    .main .stButton button:hover {
+    }}
+    .main .stButton button:hover {{
         background-color: #c82333 !important;
-    }
+    }}
     /* Model selection styles */
-    .main .stSelectbox select {
+    .main .stSelectbox select {{
         width: 100% !important;
         padding: 3px !important;
         border: 1px solid #cccccc !important;
         border-radius: 5px !important;
         font-family: 'Open Sans'!important;
-    }
+    }}
     /* Error message styles */
-    .main .stAlert {
+    .main .stAlert {{
         color: #333 !important;
-    }
+    }}
     /* Virtual Office Styles */
-    .virtual-office {
-        width: 400px; 
-        height: 200px; 
+    .virtual-office {{
+        width: 100%;
+        height: 300px; 
         border: 1px solid #ccc;
         position: relative;
         overflow: hidden;
-    }
-    .agent-emoji {
-        font-size: 30px; /* Default size */
+        background-image: url('data:image/png;base64,{background_image}');
+        background-size: cover;
+        background-position: center;
+    }}
+    .virtual-office::before {{
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5); /* Black overlay with 50% opacity */
+        z-index: 1;
+    }}
+    .agent-emoji {{
+        font-size: 40px; /* Default size */
         position: absolute;
         transition: left 1s, top 1s, font-size 0.5s; /* Adjust animation duration */
-        filter: brightness(0.5); /* Adjust the brightness value as needed */
-    }
-    .agent-emoji.active {
+        filter: brightness(0.8); /* Adjust the brightness value as needed */
+        z-index: 2;
+    }}
+    .agent-emoji.active {{
         font-size: 60px;
         filter: brightness(1.1); /* Adjust the brightness value as needed */
-    }
+    }}
     /* Speech Bubble Styles */
-    .speech-bubble {
+    .speech-bubble {{
         position: absolute;
         background-color: #333;
         color: #ccc;
@@ -222,32 +241,21 @@ st.markdown(
         margin-top: 16px;
         margin-left: 20px;
         display: none;
-        z-index: 0;
-    }
-    .agent-emoji.active + .speech-bubble {
+        z-index: 3;
+    }}
+    .agent-emoji.active + .speech-bubble {{
         display: block; /* Show only for active agent */
-    }
+    }}
+    /* Ensuring minimum height for the Virtual Office column */
+    .virtual-office-column {{
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }}
     </style>
-    """,
-    unsafe_allow_html=True,
-)
+    """
 
-def get_ollama_models():
-    try:
-        response = requests.get(f"{st.session_state.ollama_url}/api/tags")
-        response.raise_for_status()
-        models = [
-            model["name"]
-            for model in response.json()["models"]
-            if "embed" not in model["name"]
-        ]
-        models.sort()  # Simple alphabetical sorting for now
-        return models
-    except requests.exceptions.RequestException as e:
-        st.error(f"Error fetching models: {e}")
-        return []
-
-def display_virtual_office():
+def display_virtual_office(background_image):
     """Displays the virtual office with animated emojis."""
     agents_data = st.session_state.get("agents_data", [])
     active_agent_name = st.session_state.get("next_agent", None)  # Get the active agent
@@ -272,18 +280,20 @@ def display_virtual_office():
             left_pos = 130  # Centered horizontally
             top_pos = 20
         else:
-            # Other agents mill around below
+            # Other agents mill around below - Adjusted vertical range
             left_pos = random.randint(10, 250)
-            top_pos = random.randint(80, 150)  # Adjust vertical range
+            top_pos = random.randint(120, 270)  
 
         agent_emojis += f'<span id="agent-{i}" class="agent-emoji {active_class}" style="left: {left_pos}px; top: {top_pos}px;">{agent_emoji}</span>'
         # Add speech bubble for the active agent with the last comment and '...'
         if active_class:
             agent_emojis += f'<div class="speech-bubble" style="left: {left_pos + 40}px; top: {top_pos - 30}px;">{last_comment}...</div>'
 
+    # --- Call markdown before the office_html ---
+    st.markdown(background_markdown(background_image), unsafe_allow_html=True)
     st.markdown(office_html.format(agent_emojis), unsafe_allow_html=True)
 
-    # JavaScript for animation (using string concatenation instead of .format())
+    # --- Move JavaScript for animation after the virtual office HTML ---
     animation_script = """
     <script>
     function animateAgents() {
@@ -294,7 +304,7 @@ def display_virtual_office():
             if (agent.id.includes(activeAgent)) return; // Don't animate the active agent
 
             const leftPos = Math.random() * (250 - 10) + 10;
-            const topPos = Math.random() * (150 - 80) + 80; // Adjust vertical range
+            const topPos = Math.random() * (270 - 160) + 120; // Adjust vertical range
             agent.style.left = leftPos + 'px';
             agent.style.top = topPos + 'px';
         });
@@ -304,6 +314,17 @@ def display_virtual_office():
     """
 
     st.markdown(animation_script, unsafe_allow_html=True)
+
+def load_background_images(folder_path: str) -> dict:
+    """Loads background images from the specified folder."""
+    background_images = {}
+    for filename in os.listdir(folder_path):
+        if filename.endswith((".png", ".jpg", ".jpeg")):
+            image_path = os.path.join(folder_path, filename)
+            with open(image_path, "rb") as f:
+                image_data = f.read()
+                background_images[filename] = base64.b64encode(image_data).decode("utf-8")
+    return background_images
 
 class CurrentProject:
     def __init__(self):
@@ -341,8 +362,36 @@ class CurrentProject:
             self.deliverables[index]["done"] = False
 
 def main():
-    col1, col2, col3 = st.columns([3, 3, 3])
+    col1, col2 = st.columns([3, 2])
     with col1:
+        # Load background images
+        background_images = load_background_images("TeamForgeAI/images")
+
+        # Ensure a random background image is picked on load
+        if not st.session_state.selected_background:
+            st.session_state.selected_background = random.choice(list(background_images.keys()))
+
+        # Prepare sorted list of background images without file extensions
+        background_names = [os.path.splitext(name)[0] for name in sorted(background_images.keys())]
+
+        # Allow the user to choose a background image
+        selected_background_name = st.selectbox("Agent Workspace Theme", background_names, key="selected_background_name")
+
+        # Match the selected name with the actual file name (restore the extension)
+        st.session_state.selected_background = next(filename for filename in background_images.keys() if os.path.splitext(filename)[0] == selected_background_name)
+
+        # Display the virtual office with the selected background
+        st.markdown('<div class="virtual-office-column">', unsafe_allow_html=True)
+        display_virtual_office(background_images.get(st.session_state.selected_background, "default.png"))
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    with col2:
+        display_user_request_input()
+        display_rephrased_request()
+        display_user_input()
+
+    col3, col4, col5 = st.columns([3, 3, 3])
+    with col3:
         st.text_input(
             "Endpoint",
             value=st.session_state.ollama_url_input,
@@ -350,7 +399,7 @@ def main():
         )
         st.session_state.ollama_url = st.session_state.ollama_url_input
 
-    with col2:
+    with col4:
         temperature = st.slider(
             "Temperature",
             min_value=0.0,
@@ -360,9 +409,8 @@ def main():
             key="temperature",
         )
 
-
-    with col3:
-        available_models = get_ollama_models()
+    with col5:
+        available_models = get_ollama_models(st.session_state.ollama_url) # Pass the endpoint to get_ollama_models
         st.session_state.selected_model = st.selectbox(
             "Model",
             options=available_models,
@@ -385,12 +433,6 @@ def main():
         display_agents()
 
     with st.container():
-        display_virtual_office()
-        
-        display_user_request_input()
-        display_rephrased_request()
-
-
         display_discussion_and_whiteboard()
 
         # Append new comments from 'last_comment' to the discussion history
@@ -401,7 +443,6 @@ def main():
             st.write("Last Request:")
             st.write(st.session_state.last_request)
 
-        display_user_input()
         discussions = list_discussions()
         selected_discussion = st.selectbox("Load Previous Discussion", [""] + discussions, index=0)
         if selected_discussion:
