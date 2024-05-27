@@ -3,7 +3,7 @@ import streamlit as st
 import os
 
 from ui.utils import extract_code_from_response # You'll need this import
-from api_utils import get_ollama_models # Import get_ollama_models
+from api_utils import get_ollama_models
 
 def display_discussion_and_whiteboard():
     """Displays the discussion history and whiteboard in separate tabs."""
@@ -119,14 +119,16 @@ def update_discussion_and_whiteboard(expert_name, response, user_input): # Funct
     print(f"Last Comment: {st.session_state.last_comment}")
 
 def display_gallery():
-    """Displays the images in the 'images' folder."""
+    """Displays the images in the 'images' folder in a grid of three images per row."""
     image_dir = "images"
     if os.path.exists(image_dir):
         images = [f for f in os.listdir(image_dir) if f.endswith((".png", ".jpg", ".jpeg"))]
         if images:
-            for image in images:
-                image_path = os.path.join(image_dir, image)
-                st.image(image_path, caption=image, use_column_width=True)
+            cols = st.columns(3) # Create three columns
+            for i, image in enumerate(images):
+                with cols[i % 3]: # Cycle through the columns
+                    image_path = os.path.join(image_dir, image)
+                    st.image(image_path, caption=image, use_column_width=True)
         else:
             st.write("No images found in the 'images' folder.")
     else:
