@@ -268,26 +268,28 @@ def display_virtual_office(background_image):
     """
 
     agent_emojis = ""
-    for i, agent_data in enumerate(agents_data):
-        agent_name = agent_data["config"].get("name", f"Agent {i+1}")
-        agent_emoji = agent_data.get("emoji", "❓")
+    # Only create emojis if there are agents in agents_data
+    if agents_data:
+        for i, agent_data in enumerate(agents_data):
+            agent_name = agent_data["config"].get("name", f"Agent {i+1}")
+            agent_emoji = agent_data.get("emoji", "❓")
 
-        # Apply active class if the agent is the active agent
-        active_class = "active" if agent_name == active_agent_name else ""
+            # Apply active class if the agent is the active agent
+            active_class = "active" if agent_name == active_agent_name else ""
 
-        if agent_name == active_agent_name:
-            # Active agent at the top
-            left_pos = 130  # Centered horizontally
-            top_pos = 20
-        else:
-            # Other agents mill around below - Adjusted vertical range
-            left_pos = random.randint(10, 250)
-            top_pos = random.randint(120, 270)  
+            if agent_name == active_agent_name:
+                # Active agent at the top
+                left_pos = 130  # Centered horizontally
+                top_pos = 20
+            else:
+                # Other agents mill around below - Adjusted vertical range
+                left_pos = random.randint(10, 250)
+                top_pos = random.randint(120, 270)  
 
-        agent_emojis += f'<span id="agent-{i}" class="agent-emoji {active_class}" style="left: {left_pos}px; top: {top_pos}px;">{agent_emoji}</span>'
-        # Add speech bubble for the active agent with the last comment and '...'
-        if active_class:
-            agent_emojis += f'<div class="speech-bubble" style="left: {left_pos + 40}px; top: {top_pos - 30}px;">{last_comment}...</div>'
+            agent_emojis += f'<span id="agent-{i}" class="agent-emoji {active_class}" style="left: {left_pos}px; top: {top_pos}px;">{agent_emoji}</span>'
+            # Add speech bubble for the active agent with the last comment and '...'
+            if active_class:
+                agent_emojis += f'<div class="speech-bubble" style="left: {left_pos + 40}px; top: {top_pos - 30}px;">{last_comment}...</div>'
 
     # --- Call markdown before the office_html ---
     st.markdown(background_markdown(background_image), unsafe_allow_html=True)
