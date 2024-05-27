@@ -1,6 +1,7 @@
 # TeamForgeAI/ui/discussion.py
 import streamlit as st
 import os
+import base64
 
 from ui.utils import extract_code_from_response # You'll need this import
 from api_utils import get_ollama_models
@@ -128,7 +129,27 @@ def display_gallery():
             for i, image in enumerate(images):
                 with cols[i % 3]: # Cycle through the columns
                     image_path = os.path.join(image_dir, image)
-                    st.image(image_path, caption=image, use_column_width=True)
+                    
+                    # --- Create a container for the image and buttons ---
+                    image_container = st.container()
+                    with image_container:
+                        st.image(image_path, caption=image, use_column_width=True)
+                        col1, col2 = st.columns(2) # Two columns for buttons
+                        with col1:
+                            # Add download button
+                            with open(image_path, "rb") as f:
+                                image_bytes = f.read()
+                                b64 = base64.b64encode(image_bytes).decode()
+                                href = f'<a href="data:image/png;base64,{b64}" download="{image}"><button style="border: none; background: none; padding: 0; cursor: pointer;"><span style="font-size: 20px;">📥</span></button></a>'
+                                st.markdown(href, unsafe_allow_html=True)
+                        with col2:
+                            # Add delete button
+                            delete_button = f'<button style="border: none; background: none; padding: 0; cursor: pointer;" onclick="if (confirm(\'Are you sure you want to delete {image}?\')) {{ window.location.href = \'?delete={image}\'; }}"><span style="font-size: 20px;">🗑️</span></button>'
+                            st.markdown(delete_button, unsafe_allow_html=True)
+                            if st.session_state.get("delete") == image:
+                                os.remove(image_path)
+                                del st.session_state["delete"]
+                                st.experimental_rerun()
         else:
             st.write("No images found in the 'images' folder.")
     else:
