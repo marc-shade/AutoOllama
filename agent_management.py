@@ -211,19 +211,23 @@ def display_agents():
         ]
 
     # Add Agent Section
+    new_agent_role = st.sidebar.text_input("New Agent Role", key="new_agent_role")
     if st.sidebar.button("Add Agent", key="add_agent"):
+        new_agent_skills = assign_skills(new_agent_role)  # Assign skills based on role
+        new_agent_model = select_model(new_agent_skills)  # Select model based on skills
+
         new_agent = {
             "type": "assistant",
             "config": {
-                "name": "New Agent",
+                "name": new_agent_role,
                 "system_message": "You are a helpful assistant.",
             },
             "description": "A new agent.",
-            "skill": None,
+            "skill": new_agent_skills,
             "tools": [],
             "ollama_url": "http://localhost:11434",  # Default agent-specific settings
             "temperature": 0.10,
-            "model": select_model(),  # Select model dynamically
+            "model": new_agent_model,
         }
         st.session_state.agents_data.append(new_agent)
         save_agent_to_json(
@@ -250,33 +254,37 @@ def display_agents():
     )
 
 
-def select_model():
-    """Select the appropriate model for the new agent based on predefined criteria."""
+def assign_skills(role):
+    """Assign skills to an agent based on its role."""
+    role_to_skills_mapping = {
+        "Project Manager": ["project_management"],
+        "Storyline Developer": ["generate_sd_images", "plot_diagram"],
+        "Illustrator Designer": ["generate_sd_images"],
+        "Content Writer": ["fetch_web_content"],
+        "Moral Lesson Consultant": ["project_management"],
+    }
+    return role_to_skills_mapping.get(role, [])
+
+
+def select_model(skills):
+    """Select the appropriate model for the new agent based on assigned skills."""
     available_models = get_ollama_models("http://localhost:11434")
     print(f"Available models: {available_models}")  # Debugging line
-    
+
     if not available_models:
-        selected_model = "default_model"  # Fallback model if no models are available
-    else:
-        # Implement specific model selection criteria based on agent's role or skills
-        # For this example, let's assume certain skills require specific models
+        return "default_model"  # Fallback model if no models are available
+
+    if skills:
         skill_based_model_mapping = {
             'project_management': 'mistral:7b-instruct-v0.2-q8_0',
             'generate_sd_images': 'llama3:8b',
             'plot_diagram': 'llama3:8b',
             'fetch_web_content': 'mistral:7b-instruct-v0.2-q8_0'
         }
-
-        # Select the most appropriate model for the new agent
-        agent_skills = st.session_state.get("new_agent_skills", [])
-        selected_model = random.choice(available_models)  # Default random selection
-        for skill in agent_skills:
+        for skill in skills:
             if skill in skill_based_model_mapping:
-                selected_model = skill_based_model_mapping[skill]
-                break
-
-    print(f"Selected model: {selected_model}")  # Debugging line
-    return selected_model
+                return skill_based_model_mapping[skill]
+    return "llama3:8b"  # Default model if no specific skill model is found
 
 
 def handle_agent_editing(teams):
@@ -308,10 +316,11 @@ def edit_agent_properties(agent, teams):
 
     available_skills = load_skills()
     agent_skill = agent.get("skill", None)
+    # Correct the index logic to handle empty lists
     selected_skill = st.selectbox(
         "Skill",
         [None] + list(available_skills.keys()),
-        index=([None] + list(available_skills.keys())).index(agent_skill) if agent_skill is not None else 0,
+        index=([None] + list(available_skills.keys())).index(agent_skill[0]) if agent_skill else 0,
         key=f"skill_select_{edit_index}",
     )
     agent["skill"] = selected_skill
