@@ -292,8 +292,11 @@ def get_agents_from_text(text):
                 "items": {"type": "string", "enum": available_skills},
             },
             "tools": {"type": "array", "items": {"type": "string"}},
+            "ollama_url": {"type": "string"},
+            "temperature": {"type": "number"},
+            "model": {"type": "string"}
         },
-        "required": ["expert_name", "description", "skills", "tools"],
+        "required": ["expert_name", "description", "skills", "tools", "ollama_url", "temperature", "model"],
     }
     system_prompt = """You will be given a JSON schema to follow for your response. Respond with valid JSON matching the provided schema."""
     # Provide a clear example of the expected JSON structure
@@ -303,24 +306,36 @@ def get_agents_from_text(text):
             "description": "Experienced project manager to oversee the game development.",
             "skills": ["project_management", "team_leadership"],
             "tools": ["Jira", "Trello"],
+            "ollama_url": "http://localhost:11434",
+            "temperature": 0.1,
+            "model": "mistral:7b-instruct-v0.2-q8_0"
         },
         {
             "expert_name": "Python Developer",
             "description": "Skilled Python developer to implement the game logic.",
             "skills": ["python_programming", "game_development"],
             "tools": ["Python", "Pygame"],
+            "ollama_url": "http://localhost:11434",
+            "temperature": 0.1,
+            "model": "llama3:8b"
         },
         {
             "expert_name": "Web Content Summarizer",
             "description": "An AI agent that can fetch and summarize content from a provided URL.",
             "skills": ["fetch_web_content"],  # The new skill
             "tools": [],
+            "ollama_url": "http://localhost:11434",
+            "temperature": 0.1,
+            "model": "mistral:7b-instruct-v0.2-q8_0"
         },
         {
             "expert_name": "Web Researcher",
             "description": "An AI agent that can perform web searches and return the top results.",
             "skills": ["web_search"],  # The new skill
             "tools": [],
+            "ollama_url": "http://localhost:11434",
+            "temperature": 0.1,
+            "model": "mistral:7b-instruct-v0.2-q8_0"
         },
     ]
 
@@ -356,8 +371,11 @@ def get_agents_from_text(text):
                 description = agent_data.get("description", "")
                 skills = agent_data.get("skills", [])
                 tools = agent_data.get("tools", [])
+                ollama_url = agent_data.get("ollama_url", "http://localhost:11434")
+                temperature = agent_data.get("temperature", 0.1)
+                model = agent_data.get("model", "mistral:7b-instruct-v0.2-q8_0")
                 autogen_agent, crewai_agent = create_agent_data(
-                    expert_name, description, skills, tools
+                    expert_name, description, skills, tools, ollama_url=ollama_url, temperature=temperature, model=model
                 )
                 autogen_agents.append(autogen_agent)
                 crewai_agents.append(crewai_agent)
