@@ -1,6 +1,7 @@
 # TeamForgeAI/agent_interactions.py
 import re
 import time
+import json # Import the json module
 
 import streamlit as st
 
@@ -8,7 +9,7 @@ from api_utils import send_request_to_ollama_api
 from file_utils import load_skills
 from skills.fetch_web_content import fetch_web_content
 from skills.generate_sd_images import generate_sd_images
-from ui.discussion import update_discussion_and_whiteboard
+from ui.discussion import update_discussion_and_whiteboard  # Corrected import
 from ui.utils import extract_keywords  # Import extract_keywords
 
 
@@ -45,52 +46,54 @@ def process_agent_interaction(agent_index):
     url_content = fetch_web_content(reference_url) if reference_url else ""
 
     # --- Construct the request based on the selected skill ---
-    if selected_skill:  # If a skill is selected for the agent
-        if selected_skill == "web_search":
-            keywords = extract_keywords(rephrased_request) + extract_keywords(
-                st.session_state.get("discussion_history", "")
-            )
-            query = " ".join(keywords)
-            request = f"""Act as the {agent_name} who {description}.
-            You have been tasked to use the '{selected_skill}' skill to research the following query: '{query}'.
-            Original request was: {user_request}. 
-            You are helping a team work on satisfying {rephrased_request}. 
-            Additional input: {user_input}. 
-            Reference URL content: {url_content}.
-            The discussion so far has been {st.session_state.discussion_history[-50000:]}."""
-        else:  # Handle other skills
-            query = user_input
-            request = f"""Act as the {agent_name} who {description}.
-            You have been tasked to use the '{selected_skill}' skill with the following input: '{query}'.
-            Original request was: {user_request}. 
-            You are helping a team work on satisfying {rephrased_request}. 
-            Additional input: {user_input}. 
-            Reference URL content: {url_content}.
-            The discussion so far has been {st.session_state.discussion_history[-50000:]}."""
-    else:  # If no skill is selected
-        request = f"""Act as the {agent_name} who {description}.
+    request = f"""Act as the {agent_name} who {description}.
         Original request was: {user_request}. 
         You are helping a team work on satisfying {rephrased_request}. 
         Additional input: {user_input}. 
         Reference URL content: {url_content}.
         The discussion so far has been {st.session_state.discussion_history[-50000:]}."""
 
+    # --- Prepare the query based on the skill ---
+    if selected_skill:  # If a skill is selected for the agent
+        if selected_skill == "web_search":
+            keywords = extract_keywords(rephrased_request) + extract_keywords(
+                st.session_state.get("discussion_history", "")
+            )
+            query = " ".join(keywords)
+            request += f"\nYou have been tasked to use the '{selected_skill}' skill to research the following query: '{query}'."
+        elif selected_skill == "plot_diagram": # Update query for plot_diagram
+            query = '{}' # Pass an empty JSON string as a placeholder
+            request += f"\nYou have been tasked to use the '{selected_skill}' skill. Analyze the discussion history and determine if there is any data that can be visualized as a diagram. If so, extract the relevant data, interpret keywords, numerical values, and patterns to generate a JSON string with the appropriate parameters for the 'plot_diagram' skill, and then use the skill to create the diagram. If no relevant data is found, or if the user has provided specific instructions for the diagram, follow those instructions instead. Remember to always provide a valid JSON string as parameters for the 'plot_diagram' skill, even if it's an empty dictionary '{{}}'."
+        else:  # Handle other skills
+            query = user_input
+            request += f"\nYou have been tasked to use the '{selected_skill}' skill with the following input: '{query}'."
+
     # --- If a skill other than generate_sd_images is selected, execute it ---
     if selected_skill and selected_skill != "generate_sd_images":
         skill_function = available_skills[selected_skill]
-        skill_result = skill_function(query=query)
-        if isinstance(skill_result, list):
-            formatted_results = "\n".join(
-                [f"- {title}: {url} ({snippet})" for title, url, snippet in skill_result]
-            )
-            response_text = formatted_results
-        else:
-            response_text = f"Skill '{selected_skill}' result: {skill_result}"
+        skill_result = skill_function(query=query) # Pass the query to the skill function
 
-        update_discussion_and_whiteboard(agent_name, response_text, user_input)
+        # --- Handle plot_diagram skill result ---
+        if selected_skill == "plot_diagram":
+            if skill_result.startswith("Error:"):
+                st.error(skill_result)
+            else:
+                st.image(skill_result, caption="Generated Diagram")
+        else:
+            if isinstance(skill_result, list):
+                formatted_results = "\n".join(
+                    [f"- {title}: {url} ({snippet})" for title, url, snippet in skill_result]
+                )
+                response_text = formatted_results
+            else:
+                response_text = f"Skill '{selected_skill}' result: {skill_result}"
+
+            update_discussion_and_whiteboard(agent_name, response_text, user_input)
+
         st.session_state["trigger_rerun"] = True
         return  # Exit after executing the skill
 
+    
     # Reset the UI update flag
     st.session_state["update_ui"] = False
 
