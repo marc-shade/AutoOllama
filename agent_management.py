@@ -316,11 +316,16 @@ def edit_agent_properties(agent, teams):
 
     available_skills = load_skills()
     agent_skill = agent.get("skill", None)
-    # Correct the index logic to handle empty lists
+    # Correct the index logic to handle strings and None
+    skill_index = 0  # Default index
+    if isinstance(agent_skill, list) and agent_skill:
+        skill_index = ([None] + list(available_skills.keys())).index(agent_skill[0]) if agent_skill[0] in available_skills else 0
+    elif isinstance(agent_skill, str) and agent_skill:
+        skill_index = ([None] + list(available_skills.keys())).index(agent_skill) if agent_skill in available_skills else 0
     selected_skill = st.selectbox(
         "Skill",
         [None] + list(available_skills.keys()),
-        index=([None] + list(available_skills.keys())).index(agent_skill[0]) if agent_skill else 0,
+        index=skill_index,
         key=f"skill_select_{edit_index}",
     )
     agent["skill"] = selected_skill
