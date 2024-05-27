@@ -24,16 +24,15 @@ def make_api_request(url, data, headers, api_key=None):
 
 
 def create_agent_data(
-    expert_name, description, skills, tools, enable_reading_html=False
+    expert_name, description, skills, tools, enable_reading_html=False, ollama_url=None, temperature=None, model=None
 ):  # Add enable_reading_html argument
-    temperature_value = st.session_state.get("temperature", 0.1)
     autogen_agent_data = {
         "type": "assistant",
         "config": {
             "name": expert_name,
             "llm_config": {
                 "config_list": [{"model": "llama3:8b"}],  # Default to Llama3
-                "temperature": temperature_value,
+                "temperature": temperature if temperature is not None else 0.1,
                 "timeout": 600,
                 "cache_seed": 42,
             },
@@ -45,6 +44,9 @@ def create_agent_data(
         "skills": skills,
         "tools": tools,
         "enable_reading_html": enable_reading_html,
+        "ollama_url": ollama_url, # Add agent-specific settings
+        "temperature": temperature,
+        "model": model,
     }
     crewai_agent_data = {
         "name": expert_name,
@@ -57,16 +59,18 @@ def create_agent_data(
     return autogen_agent_data, crewai_agent_data
 
 
-def send_request_to_ollama_api(expert_name, request, api_key=None, stream=True):
-    temperature_value = st.session_state.get("temperature", 0.1)
-    ollama_url = st.session_state.get("ollama_url", "http://localhost:11434")
+def send_request_to_ollama_api(expert_name, request, api_key=None, stream=True, agent=None): # Add agent parameter
+    # --- Get agent-specific settings or fall back to global settings ---
+    ollama_url = agent.get("ollama_url") if agent else st.session_state.get("ollama_url", "http://localhost:11434")
+    temperature_value = agent.get("temperature") if agent else st.session_state.get("temperature", 0.1)
+    model = agent.get("model") if agent else st.session_state.get("model", "mistral:7b-instruct-v0.2-q8_0")
 
     url = f"{ollama_url}/api/generate"
     data = {
-        "model": st.session_state.model,
+        "model": model, # Use agent-specific model
         "prompt": request,
         "options": {
-            "temperature": temperature_value,
+            "temperature": temperature_value, # Use agent-specific temperature
         },
         "stream": stream,  # Include stream parameter
     }
@@ -114,3 +118,19 @@ def extract_code_from_response(response):
     all_code_blocks = code_blocks + html_blocks + js_blocks + css_blocks
     unique_code_blocks = list(set(all_code_blocks))
     return "\n\n".join(unique_code_blocks)
+
+def get_ollama_models(ollama_url = "http://localhost:11434"): # Moved from main.py
+    """Gets the list of available models from the Ollama API."""
+    try:
+        response = requests.get(f"{ollama_url}/api/tags")
+        response.raise_for_status()
+        models = [
+            model["name"]
+            for model in response.json()["models"]
+            if "embed" not in model["name"]
+        ]
+        models.sort()  # Simple alphabetical sorting for now
+        return models
+    except requests.exceptions.RequestException as e:
+        st.error(f"Error fetching models: {e}")
+        return []
