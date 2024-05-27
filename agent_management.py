@@ -400,23 +400,35 @@ def regenerate_agent_description(agent):
     agent_name = agent["config"]["name"]
     agent_description = agent["description"]
     user_request = st.session_state.get("user_request", "")
+    rephrased_request = st.session_state.get("rephrased_request", "")
+    additional_input = st.session_state.get("user_input", "")
+    whiteboard = st.session_state.get("whiteboard", "")
     discussion_history = st.session_state.get("discussion_history", "")
+    current_project = st.session_state.get("current_project", None)
+    objectives = "\n".join([f"- {obj['text']}" for obj in current_project.objectives]) if current_project else ""
+    deliverables = "\n".join([f"- {d['text']}" for d in current_project.deliverables]) if current_project else ""
+    goal = current_project.goal if current_project else ""
 
     prompt = f"""
-        You are an AI assistant tasked with refining the description of an AI agent. Below are the agent's current details:
-        {agent_name}
-        {agent_description}
+        You are an AI assistant tasked with refining the description of an AI agent named {agent_name}. 
+        The agent's current description is: {agent_description}
 
-        Generate a revised description for {agent_name} that defines the agent in the best manner possible to address the current user request, taking into account the discussion thus far. 
-            
-        Use a step-by-step reasoning process to:
-        1. Analyze: {user_request}
-        2. Consider the discussion so far for context: {discussion_history}
-        2. Identify key areas where this can be improved to better meet the user request: {agent_description}
-        3. Generate a revised agent_description that incorporates these improvements.
+        Consider the following information to refine the agent's description:
 
-        Return only the revised agent_description, without a title or any additional commentary or narrative.  It is imperative that you return ONLY the text of the new agent_description.  
-        No preamble, no narrative, no superfluous commentary whatsoever.  Just the agent_description, unlabeled, no title, please.
+        User Request: {user_request}
+        Re-engineered Prompt: {rephrased_request}
+        Additional Input: {additional_input}
+        Whiteboard: {whiteboard}
+        Discussion History: {discussion_history}
+        Objectives: {objectives}
+        Deliverables: {deliverables}
+        Goal: {goal}
+
+        Generate a revised prompt for {agent_name} that defines the agent and it's role in the project in best manner possible to address the current goal. Taking into account all the information provided, only prompt the agent based on its role in the project. 
+
+        Return ONLY the revised agent description, without a title, label, or any additional commentary or narrative. 
+        It is imperative that you return ONLY the text of the new agent description. You are redefining a prompt in code, keep it clean and tight.
+        No preamble, no narrative, no superfluous commentary whatsoever. Just the agent description, unlabeled, no title, please.
     """
 
     print(f"regenerate_agent_description called with agent_name: {agent_name}")
