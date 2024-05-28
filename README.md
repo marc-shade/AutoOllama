@@ -37,6 +37,10 @@ Create virtual environment:
 conda create --name teamforge python=3.11
 ```
 
+```bash
+conda activate teamforge
+```
+
 Install dependencies:
 ```bash
 pip install -r requirements.txt
