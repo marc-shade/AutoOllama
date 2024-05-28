@@ -47,7 +47,7 @@ pip install -r requirements.txt
 
 Start the application:
 ```bash
-streamlit run TeamForgeAI/main.py
+streamlit run TeamForgeAI-main/main.py
 ```
 
 ## Usage
