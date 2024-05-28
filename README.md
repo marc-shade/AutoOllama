@@ -44,6 +44,10 @@ Install dependencies:
 ```bash
 pip install -r requirements.txt
 ```
+Create a couple of folders. This will be fixed in future versions.
+```bash
+mkdir agents images
+```
 
 Start the application:
 ```bash
