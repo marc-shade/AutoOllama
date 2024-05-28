@@ -28,8 +28,7 @@
 
 Clone the repository:
 ```bash
-git clone https://github.com/your-username/TeamForgeAI.git
-cd TeamForgeAI
+git clone https://github.com/marc-shade/TeamForgeAI.git
 ```
 
 Create virtual environment:
@@ -48,7 +47,7 @@ pip install -r requirements.txt
 
 Start the application:
 ```bash
-streamlit run main.py
+streamlit run TeamForgeAI/main.py
 ```
 
 ## Usage
