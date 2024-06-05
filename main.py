@@ -62,19 +62,19 @@ if "current_project" not in st.session_state: # Initialize current_project
     st.session_state.current_project = CurrentProject()
 
 # Directory for saving discussion history
-project_dir = 'TeamForgeAI/files/discussions' # Updated path
-if not os.path.exists(project_dir):
-    os.makedirs(project_dir)
+PROJECT_DIR = 'TeamForgeAI/files/discussions' # Updated path
+if not os.path.exists(PROJECT_DIR):
+    os.makedirs(PROJECT_DIR)
 
 def save_discussion_history(history: str, discussion_name: str) -> None:
     """Saves the discussion history to a text file."""
-    with open(os.path.join(project_dir, f"{discussion_name}.txt"), 'w', encoding="utf-8") as file:  # Write mode to avoid duplication
+    with open(os.path.join(PROJECT_DIR, f"{discussion_name}.txt"), 'w', encoding="utf-8") as file:  # Write mode to avoid duplication
         file.write(history)
-    cleanup_old_files(project_dir, max_files=20)
+    cleanup_old_files(PROJECT_DIR, max_files=20)
 
 def load_discussion_history(discussion_name: str) -> str:
     """Loads the discussion history from a text file."""
-    file_path = os.path.join(project_dir, f"{discussion_name}.txt")
+    file_path = os.path.join(PROJECT_DIR, f"{discussion_name}.txt")
     if os.path.exists(file_path):
         with open(file_path, 'r', encoding="utf-8") as file:
             return file.read()
@@ -82,7 +82,7 @@ def load_discussion_history(discussion_name: str) -> str:
 
 def list_discussions() -> list:
     """Lists all saved discussions."""
-    return [f.replace('.txt', '') for f in os.listdir(project_dir) if os.path.isfile(os.path.join(project_dir, f))]
+    return [f.replace('.txt', '') for f in os.listdir(PROJECT_DIR) if os.path.isfile(os.path.join(PROJECT_DIR, f))]
 
 def cleanup_old_files(directory: str, max_files: int) -> None:
     """Deletes old files from the specified directory, keeping only the most recent ones."""
