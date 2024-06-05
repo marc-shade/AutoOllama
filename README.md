@@ -46,12 +46,12 @@ conda activate teamforge
 
 Install dependencies:
 ```bash
-pip install -r requirements.txt
+pip install -r TeamForgeAI/requirements.txt
 ```
 
 Start the application:
 ```bash
-streamlit run TeamForgeAI-main/main.py
+streamlit run TeamForgeAI/main.py
 ```
 
 ## Usage
