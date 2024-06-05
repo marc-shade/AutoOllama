@@ -299,11 +299,14 @@ def display_virtual_office(background_image: str) -> None:
 
 
 @st.cache_resource
-def load_background_images(folder_path: str, cache_key=None) -> str: # Add cache_key parameter
+def load_background_images(folder_path: str, cache_key=None) -> str:
     """Loads background images from the specified folder and returns a random one."""
     background_images = []
     for filename in os.listdir(folder_path):
         if filename.endswith((".png", ".jpg", ".jpeg")):
             image_path = os.path.join(folder_path, filename)
             background_images.append(image_path)
-    return random.choice(background_images) # Randomly choose a background image path
+    if background_images:
+        return random.choice(background_images) # Randomly choose a background image path
+    else:
+        return None # Return None if no images are found
