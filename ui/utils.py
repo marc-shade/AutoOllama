@@ -75,6 +75,7 @@ def handle_begin(session_state: dict) -> None:
                 session_state.crewai_zip_buffer = crewai_zip_buffer
                 session_state.agents_data = autogen_agents # Now correctly scoped
                 session_state.current_project = current_project # Store the current project in session state
+                st.session_state["trigger_rerun"] = True # Trigger a rerun
                 break  # Exit the loop if successful
             print("Error: Failed to rephrase the user request.")
             st.warning("Failed to rephrase the user request. Please try again.")
@@ -89,16 +90,9 @@ def handle_begin(session_state: dict) -> None:
                 st.warning("An error occurred. Please try again.")
                 return  # Exit the function if max retries are exceeded            
                 
-    # --- Removed st.rerun() from here ---
-
+    # --- Recalculate rephrased_text, autogen_agents, crewai_agents, and current_project ---
     rephrased_text = session_state.rephrased_request
-    autogen_agents, crewai_agents, current_project = get_agents_from_text(rephrased_text) # Modified to return current_project
-    print(f"Debug: AutoGen Agents: {autogen_agents}")
-    print(f"Debug: CrewAI Agents: {crewai_agents}")
-    if not autogen_agents:
-        print("Error: No agents created.")
-        st.warning("Failed to create agents. Please try again.")
-        return
+    autogen_agents, crewai_agents, current_project = get_agents_from_text(rephrased_text)
     agents_data = {}
     for agent in autogen_agents:
         agent_name = agent["config"]["name"]
@@ -108,10 +102,7 @@ def handle_begin(session_state: dict) -> None:
             agent,
             os.path.join("TeamForgeAI/files/agents", st.session_state.current_team, f"{agent_name}.json"), # Corrected path
         )
-    print(f"Debug: Agents data: {agents_data}")
     workflow_data, _ = get_workflow_from_agents(autogen_agents)
-    print(f"Debug: Workflow data: {workflow_data}")
-    print(f"Debug: CrewAI agents: {crewai_agents}")
     (
         autogen_zip_buffer,
         crewai_zip_buffer,
