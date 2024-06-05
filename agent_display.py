@@ -39,49 +39,49 @@ def agent_button_callback(agent_index: int):
             return  # Do nothing if the edit panel is open
 
         # --- Get the agent's selected skill ---
-        selected_skill = agent.get("skill")
+        selected_skill = agent.get("skill", []) # Ensure selected_skill is a list
 
         # --- Execute the skill directly if it's assigned ---
         if selected_skill:
             available_skills = load_skills()
-            if selected_skill in available_skills:
-                skill_function = available_skills[selected_skill]
+            if selected_skill[0] in available_skills: # Check the first skill in the list
+                skill_function = available_skills[selected_skill[0]]
 
                 # --- Prepare the query based on the skill ---
                 user_input = st.session_state.get("user_input", "")
                 rephrased_request = st.session_state.get("rephrased_request", "")
                 discussion_history = st.session_state.get("discussion_history", "")  # Get the discussion history
-                if selected_skill == "web_search":
+                if selected_skill[0] == "web_search":
                     keywords = extract_keywords(rephrased_request) + extract_keywords(
                         st.session_state.get("discussion_history", "")
                     )
                     query = " ".join(keywords)
-                elif selected_skill == "generate_sd_images":
+                elif selected_skill[0] == "generate_sd_images":
                     query = discussion_history  # Pass the discussion history to generate_sd_images
-                elif selected_skill == "plot_diagram":
+                elif selected_skill[0] == "plot_diagram":
                     query = "{}"
                 # --- Pass user_input to all skills ---
-                elif selected_skill in ["generate_agent_instructions", "update_project_status"]:  # Handle new skills
+                elif selected_skill[0] in ["generate_agent_instructions", "update_project_status"]:  # Handle new skills
                     query = ""  # These skills don't require a query
                 else: 
                     query = user_input
 
                 # --- Execute the skill ---
-                if selected_skill == "generate_sd_images":
+                if selected_skill[0] == "generate_sd_images":
                     skill_result = skill_function(discussion_history=discussion_history)  # Pass only discussion_history
-                elif selected_skill == "fetch_web_content":  # Handle fetch_web_content separately
+                elif selected_skill[0] == "fetch_web_content":  # Handle fetch_web_content separately
                     skill_result = skill_function(query=query)  # Pass only query to fetch_web_content
-                elif selected_skill == "plot_diagram":  # Handle plot_diagram separately
+                elif selected_skill[0] == "plot_diagram":  # Handle plot_diagram separately
                     skill_result = skill_function(query=query)  # Pass only query to plot_diagram
-                elif selected_skill == "web_search":
+                elif selected_skill[0] == "web_search":
                     skill_result = skill_function(query=query)  # Pass only query to web_search
                 else:
                     skill_result = skill_function(query=query, agents_data=st.session_state.agents_data)  # Pass query for other skills
 
                 # --- Handle the skill result ---
-                if selected_skill == "generate_sd_images":
+                if selected_skill[0] == "generate_sd_images":
                     pass
-                elif selected_skill == "plot_diagram":
+                elif selected_skill[0] == "plot_diagram":
                     if skill_result.startswith("Error:"):
                         st.error(skill_result)
                     else:
@@ -93,7 +93,7 @@ def agent_button_callback(agent_index: int):
                         )
                         response_text = formatted_results
                     else:
-                        response_text = f"Skill '{selected_skill}' result: {skill_result}"
+                        response_text = f"Skill '{selected_skill[0]}' result: {skill_result}"
 
                     update_discussion_and_whiteboard(agent_name, response_text, user_input)
 
