@@ -72,7 +72,7 @@ def rephrase_prompt(user_request: str) -> str:
     print(f"Request Payload: {json.dumps(ollama_request, indent=2)}")
     try:
         print("Sending request to Ollama API...")
-        response = requests.post(url, json=ollama_request, headers=headers)
+        response = requests.post(url, json=ollama_request, headers=headers, timeout=60) # Added timeout
         print(f"Response received. Status Code: {response.status_code}")
         if response.status_code == 200:
             print("Request successful. Parsing response...")
@@ -190,7 +190,7 @@ def get_agents_from_text(text: str) -> tuple:
         # "format": "json",  # REMOVE THIS LINE
     }
     try:
-        response = requests.post(url, json=ollama_request, headers=headers)
+        response = requests.post(url, json=ollama_request, headers=headers, timeout=60) # Added timeout
         if response.status_code == 200:
             response_data = response.json()
             # Extract the JSON string from the "response" field and parse it
