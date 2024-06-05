@@ -109,7 +109,7 @@ def load_skills() -> dict:
                 print(f"Error importing skill from {filename}: {error}")
     return skill_functions
 
-def save_agent_to_json(agent_data: dict, filename: str = "TeamForgeAI/files/agents/agent.json") -> None:
+def save_agent_to_json(agent_data: dict, filename: str) -> None:
     """Saves agent data to a JSON file."""
     # Get the absolute path to the TeamForgeAI directory
     teamforgeai_dir = os.path.dirname(os.path.dirname(__file__))
@@ -119,7 +119,7 @@ def save_agent_to_json(agent_data: dict, filename: str = "TeamForgeAI/files/agen
     with open(absolute_filename, "w", encoding="utf-8") as file:
         json.dump(agent_data, file, indent=4)
 
-def load_agents_from_json(directory: str = 'TeamForgeAI/files/agents/') -> list:
+def load_agents_from_json(directory: str) -> list:
     """Loads agents from JSON files in the specified directory."""
     # Get the absolute path to the TeamForgeAI directory
     teamforgeai_dir = os.path.dirname(os.path.dirname(__file__))
