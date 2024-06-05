@@ -6,12 +6,11 @@ import time
 import requests
 import streamlit as st
 
-
-def make_api_request(url: str, data: dict, headers: dict, api_key: str = None) -> dict:
+def make_api_request(url: str, data: dict, headers: dict, api_key: str = None, timeout: int = 60) -> dict:
     """Makes an API request and returns the JSON response."""
     time.sleep(2)  # Throttle the request to ensure at least 2 seconds between calls
     try:
-        response = requests.post(url, json=data, headers=headers)
+        response = requests.post(url, json=data, headers=headers, timeout=timeout)
         if response.status_code == 200:
             return response.json()
         print(
@@ -60,7 +59,7 @@ def create_agent_data(
     return autogen_agent_data, crewai_agent_data
 
 
-def send_request_to_ollama_api(expert_name: str, request: str, api_key: str = None, stream: bool = True, agent: dict = None): # Add agent parameter
+def send_request_to_ollama_api(expert_name: str, request: str, api_key: str = None, stream: bool = True, agent: dict = None, timeout: int = 60): # Add agent parameter
     """Sends a request to the Ollama API and yields the response."""
     # --- Get agent-specific settings or fall back to global settings ---
     ollama_url = agent.get("ollama_url") if agent else st.session_state.get("ollama_url", "http://localhost:11434")
@@ -82,23 +81,31 @@ def send_request_to_ollama_api(expert_name: str, request: str, api_key: str = No
     }
 
     if stream:
-        response = requests.post(url, json=data, headers=headers, stream=True)
-        for line in response.iter_lines():
-            if line:
-                decoded_line = line.decode("utf-8")
-                json_response = json.loads(decoded_line)
-                # Update session state to trigger UI update
-                st.session_state["update_ui"] = True
-                st.session_state["next_agent"] = expert_name
-                yield json_response
+        try:
+            response = requests.post(url, json=data, headers=headers, stream=True, timeout=timeout)
+            for line in response.iter_lines():
+                if line:
+                    decoded_line = line.decode("utf-8")
+                    json_response = json.loads(decoded_line)
+                    # Update session state to trigger UI update
+                    st.session_state["update_ui"] = True
+                    st.session_state["next_agent"] = expert_name
+                    yield json_response
+        except requests.exceptions.RequestException as e:
+            st.error(f"Request failed: {e}")
+            return None
     else:
-        response = requests.post(url, json=data, headers=headers)
-        if response.status_code == 200:           
-           return response.json()  # Return the JSON response directly
-        print(
-            f"Error: API request failed with status {response.status_code}, response: {response.text}"
-        )
-        return None
+        try:
+            response = requests.post(url, json=data, headers=headers, timeout=timeout)
+            if response.status_code == 200:           
+               return response.json()  # Return the JSON response directly
+            print(
+                f"Error: API request failed with status {response.status_code}, response: {response.text}"
+            )
+            return None
+        except requests.exceptions.RequestException as e:
+            st.error(f"Request failed: {e}")
+            return None
 
 
 def extract_code_from_response(response: str) -> str:
@@ -122,10 +129,10 @@ def extract_code_from_response(response: str) -> str:
     unique_code_blocks = list(set(all_code_blocks))
     return "\n\n".join(unique_code_blocks)
 
-def get_ollama_models(ollama_url: str = "http://localhost:11434") -> list: # Moved from main.py
+def get_ollama_models(ollama_url: str = "http://localhost:11434", timeout: int = 60) -> list: # Moved from main.py
     """Gets the list of available models from the Ollama API."""
     try:
-        response = requests.get(f"{ollama_url}/api/tags")
+        response = requests.get(f"{ollama_url}/api/tags", timeout=timeout)
         response.raise_for_status()
         models = [
             model["name"]
