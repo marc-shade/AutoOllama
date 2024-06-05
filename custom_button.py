@@ -37,7 +37,10 @@ def custom_button(expert_name: str, index: int, next_agent: str) -> None:
     button_html = f'<button class="{button_class}">{expert_name}</button>'
 
     # Render the HTML code for the button using Streamlit's components.html function
-    components.html(button_style + button_html, height=50)
+    try:
+        components.html(button_style + button_html, height=50)
+    except Exception as e:
+        print(f"Error in custom_button: {e}")
 
 def agent_button(expert_name: str, index: int, next_agent: str) -> None:
     """
@@ -50,4 +53,7 @@ def agent_button(expert_name: str, index: int, next_agent: str) -> None:
 
     Returns: None
     """
-    custom_button(expert_name, index, next_agent)
+    try:
+        custom_button(expert_name, index, next_agent)
+    except Exception as e:
+        print(f"Error in agent_button: {e}")
