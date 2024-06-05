@@ -8,7 +8,7 @@ from api_utils import get_ollama_models
 from skills.plot_diagram import plot_diagram  # Import plot_diagram
 
 # Define custom CSS
-custom_css = """
+CUSTOM_CSS = """
 <style>
 .main div.stButton button {
     padding: 0px !important;
@@ -21,7 +21,7 @@ custom_css = """
 """
 
 # Inject custom CSS
-st.markdown(custom_css, unsafe_allow_html=True)
+st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
 
 def handle_checkbox_change(key: str, value: bool) -> None:
     """Callback function to handle checkbox changes."""
@@ -66,7 +66,15 @@ def display_discussion_and_whiteboard() -> None:
         display_gallery()
     with tab4:  # Charts tab
         st.header("Charts")
-        plot_diagram()  # Always call plot_diagram
+        if 'chart_data' in st.session_state:
+            try:
+                chart_data = json.loads(st.session_state.chart_data)
+                df = pd.DataFrame(chart_data)
+                st.area_chart(df.set_index('x'))
+            except Exception as e:
+                st.error(f"Error: Invalid data format for chart: {e}")
+        else:
+            st.warning("No chart data available.")
     with tab5:  # Display the full discussion history in the fifth tab
         st.write(st.session_state.discussion_history)
     with tab6:  # Objectives tab
