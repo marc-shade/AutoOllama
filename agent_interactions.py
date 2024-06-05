@@ -26,7 +26,7 @@ def process_agent_interaction(agent_index: int) -> None:
 
     agent = st.session_state.agents_data[agent_index]
     available_skills = load_skills()  # Load available skills
-    selected_skill = agent.get("skill", None)  # Get the agent's selected skill
+    selected_skill = agent.get("skill", [None])  # Get the agent's selected skill, default to a list with None
 
     # --- Check if the image generation skill should be triggered ---
     if st.session_state.get("generate_image_trigger", False):
@@ -54,36 +54,36 @@ def process_agent_interaction(agent_index: int) -> None:
         The discussion so far has been {st.session_state.discussion_history[-50000:]}."""
 
     # --- Prepare the query based on the skill ---
-    if selected_skill:  # If a skill is selected for the agent
-        if selected_skill == "web_search":
+    if selected_skill[0]:  # If a skill is selected for the agent
+        if selected_skill[0] == "web_search":
             keywords = extract_keywords(rephrased_request) + extract_keywords(
                 st.session_state.get("discussion_history", "")
             )
             query = " ".join(keywords)
-            request += f"\nYou have been tasked to use the '{selected_skill}' skill to research the following query: '{query}'."
-        elif selected_skill == "plot_diagram": # Update query for plot_diagram
+            request += f"\nYou have been tasked to use the '{selected_skill[0]}' skill to research the following query: '{query}'."
+        elif selected_skill[0] == "plot_diagram": # Update query for plot_diagram
             query = '{}' # Pass an empty JSON string as a placeholder
-            request += f"\nYou have been tasked to use the '{selected_skill}' skill. Analyze the discussion history and determine if there is any data that can be visualized as a diagram. If so, extract the relevant data, interpret keywords, numerical values, and patterns to generate a JSON string with the appropriate parameters for the 'plot_diagram' skill, and then use the skill to create the diagram. If no relevant data is found, or if the user has provided specific instructions for the diagram, follow those instructions instead. Remember to always provide a valid JSON string as parameters for the 'plot_diagram' skill, even if it's an empty dictionary '{{}}'."
-        elif selected_skill in ["generate_agent_instructions", "update_project_status"]: # Handle new skills
+            request += f"\nYou have been tasked to use the '{selected_skill[0]}' skill. Analyze the discussion history and determine if there is any data that can be visualized as a diagram. If so, extract the relevant data, interpret keywords, numerical values, and patterns to generate a JSON string with the appropriate parameters for the 'plot_diagram' skill, and then use the skill to create the diagram. If no relevant data is found, or if the user has provided specific instructions for the diagram, follow those instructions instead. Remember to always provide a valid JSON string as parameters for the 'plot_diagram' skill, even if it's an empty dictionary '{{}}'."
+        elif selected_skill[0] in ["generate_agent_instructions", "update_project_status"]: # Handle new skills
             query = "" # These skills don't require a query
         else:  # Handle other skills
             query = user_input
-            request += f"\nYou have been tasked to use the '{selected_skill}' skill with the following input: '{query}'."
+            request += f"\nYou have been tasked to use the '{selected_skill[0]}' skill with the following input: '{query}'."
 
     # --- If a skill other than generate_sd_images is selected, execute it ---
-    if selected_skill and selected_skill != "generate_sd_images":
-        skill_function = available_skills[selected_skill]
+    if selected_skill[0] and selected_skill[0] != "generate_sd_images":
+        skill_function = available_skills[selected_skill[0]]
         skill_result = skill_function(query=query, agents_data=st.session_state.agents_data) # Pass the query to the skill function
 
         # --- Handle plot_diagram skill result ---
-    if selected_skill == "plot_diagram":
-        if skill_result.startswith("Error:"):
-            st.error(skill_result)
-        else:
-            st.session_state.chart_data = skill_result # Store chart data in session state
-            st.session_state.trigger_rerun = True # Trigger a rerun to display the chart
+        if selected_skill[0] == "plot_diagram":
+            if skill_result.startswith("Error:"):
+                st.error(skill_result)
+            else:
+                st.session_state.chart_data = skill_result # Store chart data in session state
+                st.session_state.trigger_rerun = True # Trigger a rerun to display the chart
 
-        return  # Exit after executing the skill
+            return  # Exit after executing the skill
 
     
     # Reset the UI update flag
