@@ -1,28 +1,42 @@
-# TeamForgeAI/ui/utils.py
-import datetime
-import io
-import json
 import os
-import re
 import time
-import zipfile
-
-import pandas as pd
-import requests
 import streamlit as st
-
-from file_utils import create_agent_data, sanitize_text, load_skills, save_agent_to_json # Added import here
-from skills.fetch_web_content import fetch_web_content
-import nltk 
-# Make sure to install nltk: pip install nltk
-nltk.download('punkt') # Download the 'punkt' package for sentence tokenization
-nltk.download('stopwords') # Download the 'stopwords' package
+import pandas as pd
+import re
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
+from file_utils import create_agent_data, sanitize_text, load_skills, save_agent_to_json
+from agent_utils import rephrase_prompt, get_agents_from_text, get_workflow_from_agents, zip_files_in_memory
 
-from current_project import CurrentProject # Import CurrentProject from current_project.py
-from agent_utils import rephrase_prompt, get_agents_from_text, get_workflow_from_agents, zip_files_in_memory # Import from agent_utils.py
+# Directory for saving discussion history
+PROJECT_DIR = 'TeamForgeAI/files/discussions'
+if not os.path.exists(PROJECT_DIR):
+    os.makedirs(PROJECT_DIR)
 
+def list_discussions() -> list:
+    """Lists all saved discussions."""
+    return [f.replace('.txt', '') for f in os.listdir(PROJECT_DIR) if os.path.isfile(os.path.join(PROJECT_DIR, f))]
+
+def load_discussion_history(discussion_name: str) -> str:
+    """Loads the discussion history from a text file."""
+    file_path = os.path.join(PROJECT_DIR, f"{discussion_name}.txt")
+    if os.path.exists(file_path):
+        with open(file_path, 'r', encoding="utf-8") as file:
+            return file.read()
+    return ""
+
+def save_discussion_history(history: str, discussion_name: str) -> None:
+    """Saves the discussion history to a text file."""
+    with open(os.path.join(PROJECT_DIR, f"{discussion_name}.txt"), 'w', encoding="utf-8") as file:
+        file.write(history)
+    cleanup_old_files(PROJECT_DIR, max_files=20)
+
+def cleanup_old_files(directory: str, max_files: int) -> None:
+    """Deletes old files from the specified directory, keeping only the most recent ones."""
+    files = [os.path.join(directory, file) for file in os.listdir(directory) if os.path.isfile(os.path.join(directory, file))]
+    files.sort(key=os.path.getmtime, reverse=True)
+    for old_file in files[max_files:]:
+        os.remove(old_file)
 
 def extract_keywords(text: str) -> list:
     """Extracts keywords from the provided text."""
@@ -30,7 +44,6 @@ def extract_keywords(text: str) -> list:
     words = word_tokenize(text) # Tokenize the text
     keywords = [word for word in words if word.lower() not in stop_words and word.isalnum()] # Filter keywords
     return keywords
-
 
 def get_api_key() -> str:
     """Returns a hardcoded API key."""
@@ -43,11 +56,11 @@ def handle_begin(session_state: dict) -> None:
     retry_delay = 2  # in seconds
     for retry in range(max_retries):
         try:
-            rephrased_text = rephrase_prompt(user_request)
-            print(f"Debug: Rephrased text: {rephrased_text}")
-            if rephrased_text:
-                session_state.rephrased_request = rephrased_text
-                autogen_agents, crewai_agents, current_project = get_agents_from_text(rephrased_text) # Modified to return current_project
+            rephrase_prompt_result = rephrase_prompt(user_request)
+            print(f"Debug: Rephrased text: {rephrase_prompt_result}")
+            if rephrase_prompt_result:
+                session_state.rephrased_request = rephrase_prompt_result
+                autogen_agents, crewai_agents, current_project = get_agents_from_text(rephrase_prompt_result) # Modified to return current_project
                 print(f"Debug: AutoGen Agents: {autogen_agents}")
                 print(f"Debug: CrewAI Agents: {crewai_agents}")
                 if not autogen_agents:
@@ -55,13 +68,14 @@ def handle_begin(session_state: dict) -> None:
                     st.warning("Failed to create agents. Please try again.")
                     return
                 agents_data = {}
+                agents_base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "files", "agents")) # Corrected path
                 for agent in autogen_agents:
                     agent_name = agent["config"]["name"]
                     agents_data[agent_name] = agent
                     # --- Save the generated agents to the current team's directory ---
                     save_agent_to_json(
                         agent,
-                        os.path.join("TeamForgeAI/files/agents", st.session_state.current_team, f"{agent_name}.json"), # Corrected path
+                        os.path.join(agents_base_dir, st.session_state.current_team, f"{agent_name}.json"),
                     )
                 print(f"Debug: Agents data: {agents_data}")
                 workflow_data, _ = get_workflow_from_agents(autogen_agents)
@@ -94,13 +108,14 @@ def handle_begin(session_state: dict) -> None:
     rephrased_text = session_state.rephrased_request
     autogen_agents, crewai_agents, current_project = get_agents_from_text(rephrased_text)
     agents_data = {}
+    agents_base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "files", "agents")) # Corrected path
     for agent in autogen_agents:
         agent_name = agent["config"]["name"]
         agents_data[agent_name] = agent
         # --- Save the generated agents to the current team's directory ---
         save_agent_to_json(
             agent,
-            os.path.join("TeamForgeAI/files/agents", st.session_state.current_team, f"{agent_name}.json"), # Corrected path
+            os.path.join(agents_base_dir, st.session_state.current_team, f"{agent_name}.json"),
         )
     workflow_data, _ = get_workflow_from_agents(autogen_agents)
     (
@@ -109,10 +124,9 @@ def handle_begin(session_state: dict) -> None:
     ) = zip_files_in_memory(agents_data, workflow_data, crewai_agents)
     session_state.autogen_zip_buffer = autogen_zip_buffer
     session_state.crewai_zip_buffer = crewai_zip_buffer
-    session_state.agents = autogen_agents
+    session_state.agents_data = autogen_agents
     session_state.current_project = current_project # Store the current project in session state
     st.rerun() # Rerun to display the agents
-    
 
 def display_download_button() -> None:
     """Displays download buttons for Autogen and CrewAI files."""
@@ -136,7 +150,6 @@ def display_download_button() -> None:
             )
     else:
         st.warning("No files available for download.")
-
 
 def display_reset_and_upload_buttons() -> None:
     """Displays buttons for resetting the session and uploading data."""
@@ -183,7 +196,6 @@ def display_reset_and_upload_buttons() -> None:
                 st.session_state.uploaded_data = dataframe
             except Exception as error:
                 st.error(f"Error reading the file: {error}")
-
 
 def extract_code_from_response(response: str) -> str:
     """Extracts code blocks from the response."""
