@@ -10,7 +10,7 @@ def sanitize_text(text: str) -> str:
 
 emoji_list = ["🐶", "🐱", "🐭", "🐹", "🐰", "🦊", "🐻", "🐼", "🐻‍❄️", "🐨", "🐯", "🦁", "🐮", "🐷", "🐸", "🐵", "🐔", "🐧", "🐦", "🐤", "🐣", "🐥", "🦆", "🦅", "🦉", "🦇", "🐺", "🐗", "🐴", "🦄", "🐝", "🐛", "🦋", "🐌", "🐞", "🐜", "🪲", "🪳", "🪰", "🪱", "🐢", "🐍", "🦎", "🦖", "🦕", "🐙", "🦑", "🦐", "🦞", "🦀", "🐡", "🐠", "🐟", "🐬", "🐳", "🐋", "🦈", "🐊", "🐅", "🐆", "🦓", "🦍", "🦧", "🦣", "🐘", "🦏", "🦛", "🐪", "🐫", "🦒", "🦘", "🦬", "🐃", "🐂", "🐄", "🐎", "🐖", "🐏", "🐑", "🦙", "🐐", "🦌", "🦝", "🦡", "🦃", "🦚", "🦜", "🦢", "🦩", "🕊️", "🦤", "🐉", "🐲", "🌵"]
 
-def create_agent_data(expert_name: str, description: str, skills: list = None, tools: list = None, enable_reading_html: bool = False, ollama_url: str = "http://localhost:11434", temperature: float = 0.10, model: str = "mistral:7b-instruct-v0.2-q8_0") -> tuple:
+def create_agent_data(expert_name: str, description: str, skills: list = None, tools: list = None, enable_reading_html: bool = False, ollama_url: str = "http://localhost:11434", temperature: float = 0.10, model: str = "mistral:instruct") -> tuple:
     """
     Creates agent data for both AutoGen and CrewAI agents.
 
@@ -22,7 +22,7 @@ def create_agent_data(expert_name: str, description: str, skills: list = None, t
         enable_reading_html (bool, optional): Whether the agent can read HTML. Defaults to False.
         ollama_url (str, optional): The URL of the Ollama endpoint. Defaults to "http://localhost:11434".
         temperature (float, optional): The temperature for the language model. Defaults to 0.10.
-        model (str, optional): The name of the language model. Defaults to "mistral:7b-instruct-v0.2-q8_0".
+        model (str, optional): The name of the language model. Defaults to "mistral:instruct".
 
     Returns:
         tuple: A tuple containing the AutoGen agent data and the CrewAI agent data.
@@ -65,6 +65,7 @@ def create_agent_data(expert_name: str, description: str, skills: list = None, t
         "ollama_url": ollama_url, # Add agent-specific settings
         "temperature": temperature,
         "model": model,
+        "skill": sanitized_skills[0] if sanitized_skills else None,  # Add the first skill to the "skill" field
     }
     crewai_agent_data = {
         "name": expert_name,
