@@ -146,39 +146,148 @@ def get_agents_from_text(text: str) -> tuple:
     json_example = [
         {
             "expert_name": "Project_Manager",
-            "description": "Experienced project manager to oversee the game development.",
-            "skills": ["generate_agent_instructions", "update_project_status"], # Updated skills
-            "tools": ["Jira", "Trello"],
+            "description": """You are a helpful assistant and partner that excels at managing projects and coordinating teams to achieve project goals. 
+
+            Your Core Functions are:
+            1. Define Project Scope: Clearly define the Goal, Objectives, and Deliverables for the project.
+            2. Delegate Tasks: Assign objectives and deliverables to the most suitable agents based on their skills and expertise.
+            3. Monitor Progress: Actively track the progress of each agent and objective/deliverable. Use the 'summarize_project_status' skill periodically to assess the overall project status.
+            4. Provide Guidance: Offer clear instructions and feedback to the agents, ensuring they understand their tasks and how their contributions fit into the overall project.
+            5. Resolve Issues: Identify and address any bottlenecks or challenges that arise during the project.
+
+            When communicating with other agents:
+            * Use the following format for instructions:
+                - Objective [number]: [objective text] - Assigned to: [agent_name]
+                - Deliverable [number]: [deliverable text] - Assigned to: [agent_name]
+            * Request images, use the following format: ![Image Request]: (description of image)
+                - Example: Image: Corgi riding a motorcycle through a busy city street scene
+            * Focus your communication on:
+                - Providing clear and concise instructions.
+                - Requesting specific outputs from the agents.
+                - Offering constructive feedback on their work.
+                - Ensuring that all communication is aligned with the project goals and objectives.
+
+            Once the project is complete, confirm the successful completion of all objectives and deliverables.""",
+            "skills": ["generate_agent_instructions", "update_project_status", "summarize_project_status"],
+            "tools": ["Trello", "Jira", "Asana"],
             "ollama_url": "http://localhost:11434",
-            "temperature": 0.1,
-            "model": "mistral:7b-instruct-v0.2-q8_0"
+            "temperature": 0.2,
+            "model": "mistral:instruct"
         },
         {
-            "expert_name": "Python_Developer",
-            "description": "Skilled Python developer to implement the game logic.",
-            "skills": ["python_programming", "game_development"],
-            "tools": ["Python", "Pygame"],
+            "expert_name": "Storyline_Designer",
+            "description": """You are a helpful assistant and mentor that excels at crafting compelling and imaginative storylines.
+
+            Your Core Functions are:
+            1. Develop the Storyline: Craft a detailed outline, including key events, character introductions, plot twists, and a satisfying resolution.
+            2. Define Characters: Create compelling and relatable characters that the target audience can connect with.
+            3. Incorporate Themes: Ensure the story includes relevant themes and messages that align with the project goals.
+            4. Collaborate: Work closely with other agents, such as the Illustrator, Copywriter, and Editor, to ensure a cohesive and engaging final product.
+
+            When communicating:
+            * Clearly articulate your storyline ideas and progress.
+            * Provide specific details about characters, settings, and plot points.
+            * Actively seek feedback on your work and be receptive to suggestions.
+            * Use the standardized formats for discussing objectives, deliverables, and image requests.
+
+            Once you have completed your assigned tasks, clearly indicate the completion of each objective and deliverable.""",
+            "skills": ["generate_agent_instructions"],
+            "tools": ["Celtx", "Final Draft", "Trello"],
             "ollama_url": "http://localhost:11434",
-            "temperature": 0.1,
-            "model": "deepseek-coder:6.7b-instruct-fp16"
+            "temperature": 0.5,
+            "model": "mistral:instruct"
         },
         {
-            "expert_name": "Web_Content_Summarizer",
-            "description": "An AI agent that can fetch and summarize content from a provided URL.",
-            "skills": ["fetch_web_content"],  # The new skill
-            "tools": [],
+            "expert_name": "Illustration_Designer",
+            "description": """You are a helpful assistant and partner that excels at creating visually appealing and engaging illustrations.
+
+            Your Core Functions are:
+            1. Design Characters: Create visually appealing and expressive characters that capture the essence of the story.
+            2. Illustrate Scenes: Develop detailed and engaging illustrations for the project.
+            3. Collaborate: Work closely with other agents, such as the Storyline Designer, Copywriter, and Editor, to ensure the visuals align with the overall project and enhance the narrative.
+            4. Utilize Image Generation: Use the 'generate_sd_images' skill to create images based on specific requests.
+
+            When communicating:
+            * Share your illustration ideas and progress.
+            * Provide specific details about character designs, color palettes, and visual styles.
+            * Actively seek feedback on your work and be receptive to suggestions.
+            * Use the standardized format for requesting images: ![Image Request](description of image)
+
+            Once you have completed your assigned illustrations, clearly indicate the completion of each objective and deliverable.""",
+            "skills": ["generate_sd_images"],
+            "tools": ["Adobe Illustrator", "Procreate", "Photoshop"],
             "ollama_url": "http://localhost:11434",
-            "temperature": 0.1,
-            "model": "mistral:7b-instruct-v0.2-q8_0"
+            "temperature": 0.2,
+            "model": "mistral:instruct"
+        },
+        {
+            "expert_name": "Copywriter",
+            "description": """You are a helpful assistant and partner that excels at crafting clear, concise, and engaging text for various projects.
+
+            Your Core Functions are:
+            1. Write the Text: Develop clear and concise text for the project, ensuring it aligns with the project goals and target audience.
+            2. Maintain Clarity and Style: Use appropriate language, tone, and style guidelines to ensure the text is engaging and easy to understand.
+            3. Incorporate Keywords and Themes:  Integrate relevant keywords and themes to enhance the text's impact and relevance.
+            4. Collaborate: Work closely with other agents, such as the Storyline Designer, Illustrator, and Editor, to ensure a cohesive and impactful final product.
+
+            When communicating:
+            * Share your writing progress and any challenges you encounter.
+            * Provide specific examples of the text you've written.
+            * Actively seek feedback on your work and be receptive to suggestions.
+            * Use the standardized formats for discussing objectives and deliverables.
+
+            Once you have completed your assigned writing tasks, clearly indicate the completion of each objective and deliverable.""",
+            "skills": ["fetch_web_content"],
+            "tools": ["Grammarly", "Hemingway Editor", "Google Docs"],
+            "ollama_url": "http://localhost:11434",
+            "temperature": 0.4,
+            "model": "mistral:instruct"
+        },
+        {
+            "expert_name": "Editor",
+            "description": """You are a helpful assistant and mentor that excels at reviewing, refining, and ensuring the quality and consistency of written content.
+
+            Your Core Functions are:
+            1. Proofread and Edit: Thoroughly review the text for any grammatical errors, spelling mistakes, and inconsistencies.
+            2. Ensure Flow and Coherence: Evaluate the overall flow of the text, ensuring that the narrative is engaging, logical, and easy to follow.
+            3. Collaborate: Provide constructive feedback to other agents, such as the Storyline Designer and Copywriter, to improve the quality of the content.
+            4. Utilize Project Management Tools: Use tools like Trello or Asana to track progress, manage tasks, and communicate effectively with the team.
+
+            When communicating:
+            * Clearly articulate your feedback and suggestions.
+            * Provide specific examples of areas that need improvement.
+            * Be receptive to feedback from other agents and work collaboratively to refine the content.
+            * Use the standardized formats for discussing objectives and deliverables.
+
+            Once you have completed your editing tasks, clearly indicate the completion of each objective and deliverable.""",
+            "skills": ["summarize_project_status"],
+            "tools": ["Grammarly", "ProWritingAid", "Microsoft Word"],
+            "ollama_url": "http://localhost:11434",
+            "temperature": 0.3,
+            "model": "mistral:instruct"
         },
         {
             "expert_name": "Web_Researcher",
-            "description": "An AI agent that can perform web searches and return the top results.",
-            "skills": ["web_search"],  # The new skill
-            "tools": [],
+            "description": """You are a helpful assistant and partner that excels at gathering information, conducting research, and providing insights relevant to the project.
+
+            Your Core Functions are:
+            1. Conduct Research: Utilize online resources, databases, and search engines to gather information relevant to the project objectives.
+            2. Synthesize Information: Analyze and summarize the collected information, extracting key insights and presenting them in a clear and concise manner.
+            3. Provide Recommendations: Based on your research findings, offer recommendations and suggestions to support the project's progress.
+            4. Collaborate: Work closely with other agents, sharing your research findings and insights to contribute to the project's success.
+
+            When communicating:
+            * Clearly present your research findings and insights.
+            * Provide links to relevant sources and data.
+            * Actively participate in discussions, offering your expertise and perspectives.
+            * Use the standardized formats for discussing objectives and deliverables.
+
+            Once you have completed your research tasks, clearly indicate the completion of each objective and deliverable.""",
+            "skills": ["web_search"],
+            "tools": ["Google Search", "Wikipedia", "Research Databases"],
             "ollama_url": "http://localhost:11434",
-            "temperature": 0.1,
-            "model": "mistral:7b-instruct-v0.2-q8_0"
+            "temperature": 0.2,
+            "model": "mistral:instruct"
         },
     ]
 
@@ -187,7 +296,6 @@ def get_agents_from_text(text: str) -> tuple:
         "prompt": f"""{system_prompt}\n\nAvailable Skills: {available_skills}\n\nSchema: {json.dumps(schema)}\n\nExample: {json.dumps(json_example)}\n\nYou are an expert system designed to identify and recommend the optimal team of experts required to fulfill this specific user's request: {text} Your analysis should consider the complexity, domain, and specific needs of the request to assemble a multidisciplinary team of experts. Each recommended expert should come with a defined role, a brief description of their expertise, their skill set, and the tools they would utilize to achieve the user's goal.  For skills, choose from the "Available Skills" list.  The first agent must be qualified to manage the entire project, aggregate the work done by all the other agents, and produce a robust, complete, and reliable solution. **When choosing agent names, use only letters, numbers, and underscores.** Respond with ONLY a JSON array of experts, where each expert is an object adhering to the schema:""",
         "options": {"temperature": temperature_value},
         "stream": False,
-        # "format": "json",  # REMOVE THIS LINE
     }
     try:
         response = requests.post(url, json=ollama_request, headers=headers, timeout=60) # Added timeout
@@ -221,7 +329,7 @@ def get_agents_from_text(text: str) -> tuple:
                 tools = agent_data.get("tools", [])
                 ollama_url = agent_data.get("ollama_url", "http://localhost:11434")
                 temperature = agent_data.get("temperature", 0.1)
-                model = agent_data.get("model", "mistral:7b-instruct-v0.2-q8_0")
+                model = agent_data.get("model", "mistral:instruct")
                 autogen_agent, crewai_agent = create_agent_data(
                     expert_name, description, skills, tools, ollama_url=ollama_url, temperature=temperature, model=model
                 )
@@ -241,7 +349,7 @@ def get_workflow_from_agents(agents: list) -> tuple:
     current_timestamp = datetime.datetime.now().isoformat()
     temperature_value = st.session_state.get("temperature", 0.5)
     workflow = {
-        "name": "AutoOllama Workflow",  # Updated workflow name
+        "name": "TeamForgeAI Workflow",  # Updated workflow name
         "description": "Workflow auto-generated by TeamForgeAI.",  # Updated description
         "sender": {
             "type": "userproxy",
@@ -265,7 +373,7 @@ def get_workflow_from_agents(agents: list) -> tuple:
             "config": {
                 "name": "group_chat_manager",
                 "llm_config": {
-                    "config_list": [{"model": "mistral:7b-instruct-v0.2-q8_0"}],  # Updated model
+                    "config_list": [{"model": "mistral:instruct"}],
                     "temperature": temperature_value,
                     "cache_seed": 42,
                     "timeout": 600,
@@ -300,7 +408,6 @@ def get_workflow_from_agents(agents: list) -> tuple:
     for index, agent in enumerate(agents):       
         agent_name = agent["config"]["name"]
         description = agent["description"]
-        # formatted_agent_name = sanitize_text(agent_name).lower().replace(" ", "_")
         sanitized_description = sanitize_text(description)
 
         # Add skills information to the system message
@@ -327,8 +434,13 @@ def get_workflow_from_agents(agents: list) -> tuple:
     Delegate tasks to the other agents based on their skills and expertise.
     Actively monitor the progress of the objectives and deliverables.
     Provide guidance and feedback to the other agents.
-    When generating content, use the following keywords when describing scenes for illustration and images for other agents to generate from your instructions: Scene, Story, Description, Chapter, Page, Pages, Images, Image, Ideas, Illustration Ideas, Illustration, Illustrations, Visuals, Visual Elements.
+    When requesting an image, use the following format: ![Image Request](description of image)
+    When discussing an objective, use the following format: Objective [number]: [objective text]
+    When discussing a deliverable, use the following format: Deliverable [number]: [deliverable text]
+    Focus your communication on demonstrating progress towards the project objectives. 
+    Before marking an objective or deliverable as complete, ensure that the corresponding tasks have been fully executed and the outcomes meet the project requirements.
     Once the user's request is fully addressed with all aspects considered, conclude your interaction with the command: TERMINATE.
+    Periodically use the 'summarize_project_status' skill to provide a concise overview of the current project status, including the progress of objectives and deliverables.
     """
 
         agent_config = {
@@ -336,8 +448,8 @@ def get_workflow_from_agents(agents: list) -> tuple:
             "config": {
                 "name": agent_name, # Use the original agent name
                 "llm_config": {
-                    "config_list": [{"model": "mistral:7b-instruct-v0.2-q8_0"}],  # Updated model
-                    "temperature": temperature_value,
+                    "config_list": [{"model": agent["model"]}],  # Use the agent's specified model
+                    "temperature": agent["temperature"],  # Use the agent's specified temperature
                     "cache_seed": 42,
                     "timeout": 600,
                     "max_tokens": None,
@@ -381,45 +493,15 @@ def zip_files_in_memory(agents_data: dict, workflow_data: dict, crewai_agents: l
         agent_file_data = json.dumps(agent_data, indent=2)
         autogen_file_data[f"files/agents/{agent_file_name}"] = agent_file_data # Modified path
 
-    # Add fetch_web_content.py to the Autogen ZIP if any agent has the skill
-    for agent_data in agents_data.values():
-        if "fetch_web_content" in agent_data.get("skills", []):
-            skills_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "skills")) # Get skills directory relative to this file
-            with open(os.path.join(skills_dir, "fetch_web_content.py"), "r", encoding="utf-8") as file:
-                autogen_file_data["skills/fetch_web_content.py"] = file.read()
-            break  # Only add the skill file once
-
-    # Add web_search.py to the Autogen ZIP if any agent has the skill
-    for agent_data in agents_data.values():
-        if "web_search" in agent_data.get("skills", []):
-            skills_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "skills")) # Get skills directory relative to this file
-            with open(os.path.join(skills_dir, "web_search.py"), "r", encoding="utf-8") as file:
-                autogen_file_data["skills/web_search.py"] = file.read()
-            break  # Only add the skill file once
-
-    # Add generate_sd_images.py to the Autogen ZIP if any agent has the skill
-    for agent_data in agents_data.values():
-        if "generate_sd_images" in agent_data.get("skills", []):
-            skills_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "skills")) # Get skills directory relative to this file
-            with open(os.path.join(skills_dir, "generate_sd_images.py"), "r", encoding="utf-8") as file:
-                autogen_file_data["skills/generate_sd_images.py"] = file.read()
-            break  # Only add the skill file once
-
-    # Add generate_agent_instructions.py to the Autogen ZIP if any agent has the skill
-    for agent_data in agents_data.values():
-        if "generate_agent_instructions" in agent_data.get("skills", []):
-            skills_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "skills")) # Get skills directory relative to this file
-            with open(os.path.join(skills_dir, "generate_agent_instructions.py"), "r", encoding="utf-8") as file:
-                autogen_file_data["skills/generate_agent_instructions.py"] = file.read()
-            break  # Only add the skill file once
-
-    # Add update_project_status.py to the Autogen ZIP if any agent has the skill
-    for agent_data in agents_data.values():
-        if "update_project_status" in agent_data.get("skills", []):
-            skills_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "skills")) # Get skills directory relative to this file
-            with open(os.path.join(skills_dir, "update_project_status.py"), "r", encoding="utf-8") as file:
-                autogen_file_data["skills/update_project_status.py"] = file.read()
-            break  # Only add the skill file once
+    # Add skill files to the Autogen ZIP if any agent has the skill
+    skills_to_add = ["fetch_web_content", "web_search", "generate_sd_images", "generate_agent_instructions", "update_project_status", "summarize_project_status"]
+    for skill in skills_to_add:
+        for agent_data in agents_data.values():
+            if skill in agent_data.get("skills", []):
+                skills_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "skills")) # Get skills directory relative to this file
+                with open(os.path.join(skills_dir, f"{skill}.py"), "r", encoding="utf-8") as file:
+                    autogen_file_data[f"skills/{skill}.py"] = file.read()
+                break  # Only add the skill file once
         
     # Write workflow file to the Autogen ZIP
     workflow_file_name = f"{sanitize_text(workflow_data['name'])}.json"
