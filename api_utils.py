@@ -31,8 +31,8 @@ def create_agent_data(
         "config": {
             "name": expert_name,
             "llm_config": {
-                "config_list": [{"model": "llama3:8b"}],  # Default to Llama3
-                "temperature": temperature if temperature is not None else 0.1,
+                "config_list": [{"model": "mistral:instruct"}],
+                "temperature": temperature if temperature is not None else 0.2,
                 "timeout": 600,
                 "cache_seed": 42,
             },
@@ -65,7 +65,7 @@ def send_request_to_ollama_api(expert_name: str, request: str, api_key: str = No
     ollama_url = agent.get("ollama_url") if agent else st.session_state.get("ollama_url", "http://localhost:11434")
     temperature_value = agent.get("temperature") if agent else st.session_state.get("temperature", 0.1)
     # --- Use agent-specific model if available ---
-    model = agent.get("model") if agent else st.session_state.get("model", "mistral:7b-instruct-v0.2-q8_0")
+    model = agent.get("model") if agent else st.session_state.get("model", "mistral:instruct")
 
     url = f"{ollama_url}/api/generate"
     data = {
