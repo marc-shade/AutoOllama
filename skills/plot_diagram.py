@@ -1,14 +1,14 @@
-# TeamForgeAI/skills/plot_diagram.py
 import streamlit as st
 import pandas as pd
-import json
+import re
+from typing import Optional, List, Dict
 
-def plot_diagram(query=None) -> None:
+def plot_diagram(query: Optional[List[Dict[str, float]]] = None, discussion_history: str = "") -> str:
     """
     Generates an area chart based on the provided query.
 
     The query should be a list of data points, where each data point is a dictionary with 'x' and 'y' values.
-    If no query is provided, it will extract data from the discussion history or use default data.
+    If no query is provided or no valid data points are found in the discussion history, a default query with a single data point (x=0, y=0) will be used.
 
     For example:
     ```json
@@ -16,25 +16,14 @@ def plot_diagram(query=None) -> None:
     ```
 
     :param query: A list containing the data points for the chart.
+    :param discussion_history: The history of the discussion.
+    :return: An error message if an error occurs, otherwise None.
     """
-    if not query:
-        # Extracting data from discussion history
-        discussion_history = st.session_state.get("discussion_history", "")
-        try:
-            # Assuming discussion history is in a specific format containing the plot data
-            plot_data_start = discussion_history.find('[')
-            plot_data_end = discussion_history.find(']')
-            if plot_data_start == -1 or plot_data_end == -1:
-                query = [{"x": 0, "y": 0}, {"x": 1, "y": 0}]  # Use default data if no valid plot data found
-            else:
-                plot_data = discussion_history[plot_data_start:plot_data_end+1]
-                query = json.loads(plot_data)
-        except json.JSONDecodeError:
-            st.error("Error: Invalid discussion history format. Using default data.")
-            query = [{"x": 0, "y": 0}, {"x": 1, "y": 0}]
-        except ValueError as e:
-            st.error(f"Error: {e}. Using default data.")
-            query = [{"x": 0, "y": 0}, {"x": 1, "y": 0}]
+    if query is None:
+        query = extract_data_points(discussion_history)
+        # --- If no valid data points are found, use a default query ---
+        if not query:
+            query = [{"x": 0, "y": 0}]
 
     try:
         # Validate query format
@@ -45,8 +34,43 @@ def plot_diagram(query=None) -> None:
         
         df = pd.DataFrame(query)  # Create DataFrame directly from the list
         st.area_chart(df.set_index('x'))
+        return "Chart successfully created"
     except Exception as e:
-        st.error(f"Error: Invalid data format for chart: {e}")
+        return f"Error: Invalid data format for chart: {e}"  # Return an error message
 
-# Example usage
-example_query = [{"x": 1, "y": 2}, {"x": 2, "y": 5}, {"x": 3, "y": 8}]
+def extract_data_points(discussion_history: str) -> List[Dict[str, float]]:
+    """
+    Extracts data points from the discussion history.
+
+    This function attempts to identify potential data points in the discussion history
+    by looking for patterns like "x = [value], y = [value]".
+
+    :param discussion_history: The history of the discussion.
+    :return: A list of data points, or an empty list if no valid data points are found.
+    """
+    data_points = []
+    pattern = r"x\s*=\s*\[(.*?)\],\s*y\s*=\s*\[(.*?)\]"
+    matches = re.findall(pattern, discussion_history)
+    for match in matches:
+        try:
+            x_values = [float(x.strip()) for x in match[0].split(",")]
+            y_values = [float(y.strip()) for y in match[1].split(",")]
+            if len(x_values) == len(y_values):
+                for i in range(len(x_values)):
+                    data_points.append({"x": x_values[i], "y": y_values[i]})
+        except ValueError:
+            pass
+    return data_points  # Return the list, even if it's empty
+
+# Example usage in the Streamlit application context
+if __name__ == "__main__":
+    st.set_page_config(page_title="Chart Plotter", layout="wide")
+    st.title("Chart Plotter")
+
+    # Load discussion history from session state or other source
+    discussion_history = st.session_state.get("discussion_history", "")
+
+    # Generate and display the chart
+    error_message = plot_diagram(discussion_history=discussion_history)
+    if error_message:
+        st.error(error_message)
