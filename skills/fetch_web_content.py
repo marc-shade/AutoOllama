@@ -1,10 +1,11 @@
+# TeamForgeAI/fetch_web_content.py
 import requests
 from bs4 import BeautifulSoup
 from typing import Optional, List
 import re
 import streamlit as st
 
-def fetch_web_content(query: str = "") -> Optional[str]:
+def fetch_web_content(query: str = "", discussion_history: str = "") -> Optional[str]:
     """
     Fetch the content of a webpage and return it as a string.
 
@@ -12,13 +13,13 @@ def fetch_web_content(query: str = "") -> Optional[str]:
     Otherwise, it will analyze the discussion history for URLs and fetch content from those.
 
     :param query: The URL of the webpage to read.
+    :param discussion_history: The history of the discussion.
     :return: The content of the webpage as a string, or None if there is an error.
     """
     urls_to_fetch = []
     if query:
         urls_to_fetch.append(query)
     else:
-        discussion_history = st.session_state.get("discussion_history", "")
         # Find URLs in the discussion history
         url_pattern = re.compile(
             r"http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+"
@@ -34,6 +35,10 @@ def fetch_web_content(query: str = "") -> Optional[str]:
 
     all_contents = []
     for url in urls_to_fetch:
+        # Check if content from this URL has already been fetched
+        if url_content_already_fetched(url, discussion_history):
+            continue
+
         try:
             response = requests.get(url, headers=headers, timeout=10)
             response.raise_for_status()
@@ -51,3 +56,8 @@ def fetch_web_content(query: str = "") -> Optional[str]:
             all_contents.append(f"Error: Could not fetch content from {url} due to an error: {e}\n\n")
 
     return "".join(all_contents)
+
+def url_content_already_fetched(url: str, discussion_history: str) -> bool:
+    """Checks if the content from the given URL has already been fetched in the discussion history."""
+    pattern = re.compile(rf"Content from {re.escape(url)}:\n\n(.*?)\n\n---", re.DOTALL)
+    return bool(pattern.search(discussion_history))
