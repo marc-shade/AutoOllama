@@ -35,10 +35,11 @@ def assign_skills(role: str) -> list:
     """Assign skills to an agent based on its role."""
     role_to_skills_mapping = {
         "Project Manager": ["generate_agent_instructions", "update_project_status"],
-        "Storyline Developer": ["generate_sd_images", "plot_diagram"],
+        "Storyline Developer": ["None"],
+        "Writer": ["None"],
         "Illustrator Designer": ["generate_sd_images"],
-        "Content Writer": ["fetch_web_content"],
-        "Moral Lesson Consultant": ["generate_agent_instructions", "update_project_status"],
+        "Researcher": ["fetch_web_content"],
+        "Moral Lesson Consultant": ["None"],
     }
     return role_to_skills_mapping.get(role, [])
 
@@ -53,11 +54,11 @@ def select_model(skills: list) -> str:
 
     if skills:
         skill_based_model_mapping = {
-            "generate_agent_instructions": "mistral:7b-instruct-v0.2-q8_0",
-            "update_project_status": "mistral:7b-instruct-v0.2-q8_0",
-            "generate_sd_images": "llama3:8b",
-            "plot_diagram": "llama3:8b",
-            "fetch_web_content": "mistral:7b-instruct-v0.2-q8_0",
+            "generate_agent_instructions": "mistral:instruct",
+            "update_project_status": "mistral:instruct",
+            "generate_sd_images": "mistral:instruct",
+            "plot_diagram": "mistral:instruct",
+            "fetch_web_content": "mistral:instruct",
         }
         for skill in skills:
             if skill in skill_based_model_mapping:
