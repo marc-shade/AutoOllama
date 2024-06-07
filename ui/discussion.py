@@ -1,11 +1,12 @@
-# TeamForgeAI/ui/discussion.py
 import streamlit as st
 import os
 import base64
+import json
+import pandas as pd
 
-from ui.utils import extract_code_from_response  # You'll need this import
+from ui.utils import extract_code_from_response, display_download_button, list_discussions, load_discussion_history
 from api_utils import get_ollama_models
-from skills.plot_diagram import plot_diagram  # Import plot_diagram
+from skills.plot_diagram import plot_diagram
 
 # Define custom CSS
 CUSTOM_CSS = """
@@ -77,12 +78,20 @@ def display_discussion_and_whiteboard() -> None:
             st.warning("No chart data available.")
     with tab5:  # Display the full discussion history in the fifth tab
         st.write(st.session_state.discussion_history)
+
+        # Moved 'Load Previous Discussion' and download buttons inside 'Discussion History' tab
+        discussions = list_discussions()
+        selected_discussion = st.selectbox("Load Previous Discussion", [""] + discussions, index=0, key="discussion_selectbox")
+        if selected_discussion:
+            st.session_state.selected_discussion = selected_discussion
+            st.session_state.discussion_history = load_discussion_history(selected_discussion)
+
     with tab6:  # Objectives tab
         if "current_project" in st.session_state:
             current_project = st.session_state.current_project
             for index, objective in enumerate(current_project.objectives):
                 checkbox_key = f"objective_{index}"
-                # Use a callback function to handle checkbox changes
+                # Link the checkbox to the handle_checkbox_change function
                 st.checkbox(objective["text"], value=objective["done"], key=checkbox_key, on_change=handle_checkbox_change, args=(checkbox_key, not objective["done"]))
             st.session_state.current_project = current_project  # Update the session state
         else:
@@ -92,7 +101,7 @@ def display_discussion_and_whiteboard() -> None:
             current_project = st.session_state.current_project
             for index, deliverable in enumerate(current_project.deliverables):
                 checkbox_key = f"deliverable_{index}"
-                # Use a callback function to handle checkbox changes
+                # Link the checkbox to the handle_checkbox_change function
                 st.checkbox(deliverable["text"], value=deliverable["done"], key=checkbox_key, on_change=handle_checkbox_change, args=(checkbox_key, not deliverable["done"]))
             st.session_state.current_project = current_project  # Update the session state
     with tab8:  # Goal tab
