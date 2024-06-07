@@ -4,10 +4,11 @@ Skill module for updating project status based on discussion history in TeamForg
 
 import re
 import streamlit as st
+
 from current_project import CurrentProject
 
 
-def update_project_status(query: str = "", agents_data: list = None) -> None:
+def update_project_status(query: str = "", agents_data: list = None, discussion_history: str = "") -> str:
     """
     A skill to analyze the discussion history and update the project status UI.
 
@@ -15,81 +16,69 @@ def update_project_status(query: str = "", agents_data: list = None) -> None:
 
     :param query: Not used in this skill.
     :param agents_data: Not used in this skill.
+    :param discussion_history: The history of discussions in the project.
+    :return: Status message indicating what was updated.
     """
+
     # Access the current project from session state
     current_project = st.session_state.get("current_project", None)
-
     if current_project is None:
         st.error("Error: No active project found.")
-        return
-
-    discussion_history = st.session_state.get("discussion_history", "")
+        return "No active project found."
 
     # Analyze the discussion history and update objectives and deliverables
-    update_checklists(discussion_history, current_project)
-    st.session_state.current_project = current_project  # Update session state
+    status_message = update_checklists(discussion_history, current_project)
+    st.session_state["current_project"] = current_project  # Update session state
+
+    # Provide user feedback in the discussion history
+    if status_message != "No updates found in the discussion history.":
+        st.session_state.discussion_history += f"Project_Manager_LlamaBook: Skill 'update_project_status' result: {status_message}\n\n===\n\n"
+        st.session_state["trigger_rerun"] = True  # Trigger a rerun to display the update
+    return status_message
 
 
-def update_checklists(discussion_history: str, current_project: CurrentProject) -> None:
+def update_checklists(discussion_history: str, current_project: CurrentProject) -> str:
     """
     Analyzes the discussion history and updates the Objectives and Deliverables lists
     based on the Project Manager's decisions.
 
     :param discussion_history: The history of discussions in the project.
     :param current_project: The current project being managed.
+    :return: Status message indicating what was updated.
     """
-    objective_pattern = re.compile(
-        r"(?:Objective|objective)\s*(\d+)\s*(?:approved|complete|done|not approved|incomplete|needs work)",
-        re.IGNORECASE
-    )
-    deliverable_pattern = re.compile(
-        r"(?:Deliverable|deliverable)\s*(\d+)\s*(?:approved|complete|done|not approved|incomplete|needs work)",
-        re.IGNORECASE
-    )
 
-    # Split the discussion history into individual lines
-    discussion_lines = discussion_history.strip().split("\n")
+    updates = []
 
-    # Iterate through the discussion lines in reverse order
-    for line in reversed(discussion_lines):
-        # Check for objective status updates
-        for i, obj in enumerate(current_project.objectives):
-            matches = objective_pattern.findall(line)
-            for match in matches:
-                if int(match) == i + 1:
-                    if any(
-                        phrase in line for phrase in [
-                            f"Objective {i+1} approved", f"Objective {i+1} complete",
-                            f"Objective {i+1} done", f"Completed objective {i+1}"
-                        ]
-                    ):
-                        current_project.mark_objective_done(i)
-                    elif any(
-                        phrase in line for phrase in [
-                            f"Objective {i+1} not approved", f"Objective {i+1} incomplete",
-                            f"Objective {i+1} needs work"
-                        ]
-                    ):
-                        current_project.mark_objective_undone(i)
-                    break  # Stop checking for this objective once a status update is found
+    # 1. Intelligent Inference: Infer status from agent discussions (Improved)
+    for i, objective in enumerate(current_project.objectives):
+        if objective['done']:  # Skip already completed objectives
+            continue
 
-        # Check for deliverable status updates
-        for i, deliverable in enumerate(current_project.deliverables):
-            matches = deliverable_pattern.findall(line)
-            for match in matches:
-                if int(match) == i + 1:
-                    if any(
-                        phrase in line for phrase in [
-                            f"Deliverable {i+1} approved", f"Deliverable {i+1} complete",
-                            f"Deliverable {i+1} done", f"Completed deliverable {i+1}"
-                        ]
-                    ):
-                        current_project.mark_deliverable_done(i)
-                    elif any(
-                        phrase in line for phrase in [
-                            f"Deliverable {i+1} not approved", f"Deliverable {i+1} incomplete",
-                            f"Deliverable {i+1} needs work"
-                        ]
-                    ):
-                        current_project.mark_deliverable_undone(i)
-                    break  # Stop checking for this deliverable once a status update is found
+        # Look for more specific patterns indicating actual completion
+        completion_patterns = [
+            rf"\*\*Objective\s*{i+1}:\*\*.*(?:is\s*complete|is\s*done|has\s*been\s*achieved|is\s*finished|is\s*ready)",
+            rf"I\s*have\s*(?:completed|finished|done).*\*\*Objective\s*{i+1}:\*\*",
+            rf"(?:Completed|Finished|Done).*\*\*Objective\s*{i+1}:\*\*",
+        ]
+        if any(re.search(pattern, discussion_history, re.IGNORECASE) for pattern in completion_patterns):
+            current_project.mark_objective_done(i)
+            updates.append(f"Objective {i + 1} ({objective['text']}) marked as done based on discussion.")
+
+    for i, deliverable in enumerate(current_project.deliverables):
+        if deliverable['done']:  # Skip already completed deliverables
+            continue
+
+        # Look for more specific patterns indicating actual completion or submission
+        completion_patterns = [
+            rf"\*\*Deliverable\s*{i+1}:\*\*.*(?:is\s*complete|is\s*done|has\s*been\s*submitted|has\s*been\s*provided|is\s*finished|is\s*ready)",
+            rf"I\s*have\s*(?:completed|finished|done|submitted|provided).*\*\*Deliverable\s*{i+1}:\*\*",
+            rf"(?:Completed|Finished|Done|Submitted|Provided).*\*\*Deliverable\s*{i+1}:\*\*",
+            rf"Here's.*\*\*Deliverable\s*{i+1}:\*\*",
+        ]
+        if any(re.search(pattern, discussion_history, re.IGNORECASE) for pattern in completion_patterns):
+            current_project.mark_deliverable_done(i)
+            updates.append(f"Deliverable {i + 1} ({deliverable['text']}) marked as done based on discussion.")
+
+    if updates:
+        return "Updates applied: " + ", ".join(updates)
+    return "No updates found in the discussion history."
