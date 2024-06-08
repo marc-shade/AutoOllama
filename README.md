@@ -27,8 +27,9 @@
 ## Installation
 
 1. First things first. You will need Ollama installed and running: https://github.com/ollama/ollama
-2. You also need Stable Diffusion Web UI running and listening in API mode (./webui.sh --listen --api): https://github.com/AUTOMATIC1111/stable-diffusion-webui
-3. For the web_search skill, you will need to get a free API key from Serper: https://serpapi.com/manage-api-key
+2. You need a capable 'instruct' model. The default settings use mistral:instruct. So you'll want to do 'ollama pull mistral:instruct' after you install Ollama.
+3. You also need Stable Diffusion Web UI running and listening in API mode (./webui.sh --listen --api): https://github.com/AUTOMATIC1111/stable-diffusion-webui
+4. For the web_search skill, you will need to get a free API key from Serper: https://serpapi.com/manage-api-key
 
 Clone the repository:
 ```bash
