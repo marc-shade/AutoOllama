@@ -1,3 +1,5 @@
+# TeamForgeAI/main.py
+
 # Import the configuration first
 import config
 
