@@ -72,7 +72,7 @@ def rephrase_prompt(user_request: str) -> str:
     print(f"Request Payload: {json.dumps(ollama_request, indent=2)}")
     try:
         print("Sending request to Ollama API...")
-        response = requests.post(url, json=ollama_request, headers=headers, timeout=60) # Added timeout
+        response = requests.post(url, json=ollama_request, headers=headers, timeout=240) # Added timeout
         print(f"Response received. Status Code: {response.status_code}")
         if response.status_code == 200:
             print("Request successful. Parsing response...")
@@ -298,7 +298,7 @@ def get_agents_from_text(text: str) -> tuple:
         "stream": False,
     }
     try:
-        response = requests.post(url, json=ollama_request, headers=headers, timeout=60) # Added timeout
+        response = requests.post(url, json=ollama_request, headers=headers, timeout=240) # Added timeout
         if response.status_code == 200:
             response_data = response.json()
             # Extract the JSON string from the "response" field and parse it
@@ -376,7 +376,7 @@ def get_workflow_from_agents(agents: list) -> tuple:
                     "config_list": [{"model": "mistral:instruct"}],
                     "temperature": temperature_value,
                     "cache_seed": 42,
-                    "timeout": 600,
+                    "timeout": 2400,
                     "max_tokens": None,
                     "extra_body": None,
                 },
@@ -451,7 +451,7 @@ def get_workflow_from_agents(agents: list) -> tuple:
                     "config_list": [{"model": agent["model"]}],  # Use the agent's specified model
                     "temperature": agent["temperature"],  # Use the agent's specified temperature
                     "cache_seed": 42,
-                    "timeout": 600,
+                    "timeout": 2400,
                     "max_tokens": None,
                     "extra_body": None,
                 },
