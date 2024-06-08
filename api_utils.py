@@ -33,7 +33,7 @@ def create_agent_data(
             "llm_config": {
                 "config_list": [{"model": "mistral:instruct"}],
                 "temperature": temperature if temperature is not None else 0.2,
-                "timeout": 600,
+                "timeout": 1200,
                 "cache_seed": 42,
             },
             "human_input_mode": "NEVER",
