@@ -129,7 +129,7 @@ def extract_code_from_response(response: str) -> str:
     unique_code_blocks = list(set(all_code_blocks))
     return "\n\n".join(unique_code_blocks)
 
-def get_ollama_models(ollama_url: str = "http://localhost:11434", timeout: int = 60) -> list: # Moved from main.py
+def get_ollama_models(ollama_url: str = "http://localhost:11434", timeout: int = 120) -> list: # Moved from main.py
     """Gets the list of available models from the Ollama API."""
     try:
         response = requests.get(f"{ollama_url}/api/tags", timeout=timeout)
