@@ -7,6 +7,9 @@ import base64
 import streamlit as st
 import random
 
+# Set up the page to use a wide layout
+st.set_page_config(layout="wide")
+
 from agent_display import display_agents
 from ui.discussion import display_discussion_and_whiteboard
 from ui.inputs import display_user_input, display_rephrased_request, display_user_request_input
@@ -17,8 +20,6 @@ from current_project import CurrentProject
 from skills.update_project_status import update_project_status
 from skills.summarize_project_status import summarize_project_status
 
-# Set up the page to use a wide layout
-st.set_page_config(layout="wide")
 
 
 # Initialize session state variables if they are not already present
