@@ -6,7 +6,7 @@ import time
 import requests
 import streamlit as st
 
-def make_api_request(url: str, data: dict, headers: dict, api_key: str = None, timeout: int = 120) -> dict:
+def make_api_request(url: str, data: dict, headers: dict, api_key: str = None, timeout: int = 120) -> dict: # Updated timeout to 120
     """Makes an API request and returns the JSON response."""
     time.sleep(2)  # Throttle the request to ensure at least 2 seconds between calls
     try:
@@ -59,7 +59,7 @@ def create_agent_data(
     return autogen_agent_data, crewai_agent_data
 
 
-def send_request_to_ollama_api(expert_name: str, request: str, api_key: str = None, stream: bool = True, agent: dict = None, timeout: int = 60): # Add agent parameter
+def send_request_to_ollama_api(expert_name: str, request: str, api_key: str = None, stream: bool = True, agent: dict = None, timeout: int = 120): # Add agent parameter, updated timeout to 120
     """Sends a request to the Ollama API and yields the response."""
     # --- Get agent-specific settings or fall back to global settings ---
     ollama_url = agent.get("ollama_url") if agent else st.session_state.get("ollama_url", "http://localhost:11434")
@@ -72,6 +72,7 @@ def send_request_to_ollama_api(expert_name: str, request: str, api_key: str = No
         "model": model, # Use agent-specific model
         "prompt": request,
         "options": {
+            "timeout": 1200,
             "temperature": temperature_value, # Use agent-specific temperature
         },
         "stream": stream,  # Include stream parameter
@@ -129,7 +130,7 @@ def extract_code_from_response(response: str) -> str:
     unique_code_blocks = list(set(all_code_blocks))
     return "\n\n".join(unique_code_blocks)
 
-def get_ollama_models(ollama_url: str = "http://localhost:11434", timeout: int = 120) -> list: # Moved from main.py
+def get_ollama_models(ollama_url: str = "http://localhost:11434", timeout: int = 120) -> list: # Moved from main.py, updated timeout to 120
     """Gets the list of available models from the Ollama API."""
     try:
         response = requests.get(f"{ollama_url}/api/tags", timeout=timeout)
