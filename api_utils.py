@@ -6,7 +6,7 @@ import time
 import requests
 import streamlit as st
 
-def make_api_request(url: str, data: dict, headers: dict, api_key: str = None, timeout: int = 60) -> dict:
+def make_api_request(url: str, data: dict, headers: dict, api_key: str = None, timeout: int = 120) -> dict:
     """Makes an API request and returns the JSON response."""
     time.sleep(2)  # Throttle the request to ensure at least 2 seconds between calls
     try:
