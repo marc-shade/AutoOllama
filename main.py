@@ -22,8 +22,6 @@ from current_project import CurrentProject
 from skills.update_project_status import update_project_status
 from skills.summarize_project_status import summarize_project_status
 
-
-
 # Initialize session state variables if they are not already present
 if "trigger_rerun" not in st.session_state:
     st.session_state.trigger_rerun = False
