@@ -59,13 +59,13 @@ def process_agent_interaction(agent_index: int) -> None:
     if selected_skill:  # If a skill is selected for the agent
         if selected_skill[0] == "web_search":
             keywords = extract_keywords(rephrased_request) + extract_keywords(
-                st.session_state.get("discussion_history", "")
-            )
+                st.session_state.get("user_request", "") # Use the original user request instead of the formatted discussion history
+             )
             query = " ".join(keywords)
             request += f"\nYou have been tasked to use the '{selected_skill[0]}' skill to research the following query: '{query}'."
         elif selected_skill[0] == "plot_diagram": # Update query for plot_diagram
             query = '{}' # Pass an empty JSON string as a placeholder
-            request += f"\nYou have been tasked to use the '{selected_skill[0]}' skill. Analyze the discussion history and determine if there is any data that can be visualized as a diagram. If so, extract the relevant data, interpret keywords, numerical values, and patterns to generate a JSON string with the appropriate parameters for the 'plot_diagram' skill, and then use the skill to create the diagram. If no relevant data is found, or if the user has provided specific instructions for the diagram, follow those instructions instead. Remember to always provide a valid JSON string as parameters for the 'plot_diagram' skill, even if it's an empty dictionary '{{}}       '."
+            request += f"\nYou have been tasked to use the '{selected_skill[0]}' skill. Analyze the discussion history and determine if there is any data that can be visualized as a diagram. If so, extract the relevant data, interpret keywords, numerical values, and patterns to generate a JSON string with the appropriate parameters for the 'plot_diagram' skill, and then use the skill to create the diagram. If no relevant data is found, or if the user has provided specific instructions for the diagram, follow those instructions instead. Remember to always provide a valid JSON string as parameters for the 'plot_diagram' skill, even if it's an empty dictionary '{{}}'."
         elif selected_skill[0] in ["generate_agent_instructions", "update_project_status", "summarize_project_status"]: # Handle new skills
             query = "" # These skills don't require a query
         else:  # Handle other skills
