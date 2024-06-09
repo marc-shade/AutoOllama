@@ -1,4 +1,4 @@
-# TeamForgeAI/fetch_web_content.py
+# TeamForgeAI/skills/fetch_web_content.py
 import requests
 from bs4 import BeautifulSoup
 from typing import Optional, List
