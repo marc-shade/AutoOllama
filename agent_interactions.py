@@ -75,7 +75,10 @@ def process_agent_interaction(agent_index: int) -> None:
     # --- If a skill other than generate_sd_images is selected, execute it ---
     if selected_skill and selected_skill[0] != "generate_sd_images":
         skill_function = available_skills[selected_skill[0]]
-        skill_result = skill_function(query=query, agents_data=st.session_state.agents_data, discussion_history=st.session_state.discussion_history) # Pass the query to the skill function
+        if selected_skill[0] == "plot_diagram":
+            skill_result = skill_function(query=query, discussion_history=st.session_state.discussion_history) # Pass the query to the skill function
+        else:
+            skill_result = skill_function(query=query, agents_data=st.session_state.agents_data, discussion_history=st.session_state.discussion_history) # Pass the query to the skill function
 
         # --- Handle plot_diagram skill result ---
         if selected_skill[0] == "plot_diagram":
@@ -124,8 +127,8 @@ def process_agent_interaction(agent_index: int) -> None:
     st.session_state["selected_agent_index"] = agent_index
     # --- Removed st.rerun() from here ---
 
-    # --- Update checklists after agent interaction ---
-    if "current_project" in st.session_state:
+    # --- Update checklists after agent interaction ---   
+if "current_project" in st.session_state:
         update_checklists(st.session_state.discussion_history, st.session_state.current_project)
         st.session_state.current_project = st.session_state.current_project # Update session state
         # --- Set the flag to trigger a rerun ---
