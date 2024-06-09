@@ -14,7 +14,7 @@ import streamlit as st
 # Format: protocol://server:port
 base_url = "http://0.0.0.0:7860"
 
-def generate_sd_images(discussion_history: str, image_size: str = "512x512", team_name: str = "default") -> str:
+def generate_sd_images(discussion_history: str, image_size: str = "512x512", team_name: str = "default") -> List[str]:
     """
     Function to paint, draw or illustrate images based on the users query or request.
     Generates images locally with the automatic1111 API and saves them to disk.
@@ -23,7 +23,7 @@ def generate_sd_images(discussion_history: str, image_size: str = "512x512", tea
     :param discussion_history: The entire discussion history.
     :param image_size: The size of the image to be generated. (default is "512x512")
     :param team_name: The name of the team to associate the image with.
-    :return: A message indicating the result of the image generation process.
+    :return: A list of paths to the generated images.
     """
     parts = image_size.split("x")
     image_width = int(parts[0])
@@ -35,8 +35,8 @@ def generate_sd_images(discussion_history: str, image_size: str = "512x512", tea
 
     all_scenes = find_all_scenes(discussion_history)
 
+    generated_image_paths = [] # Store the paths to the generated images
     if all_scenes:
-        generated_images = []
         for scene in all_scenes:
             if scene not in used_prompts:
                 payload = {
@@ -69,20 +69,18 @@ def generate_sd_images(discussion_history: str, image_size: str = "512x512", tea
                         os.makedirs(os.path.dirname(file_path), exist_ok=True)
                         image.save(file_path)
                         print(f"Image saved to {file_path}")
-                        generated_images.append(f"Image generated for: {scene}")
+                        generated_image_paths.append(file_name) # Add the image path to the list
 
                     used_prompts.append(scene)
                     st.session_state["used_image_prompts"] = used_prompts
                 else:
-                    return f"Failed to download the image from {api_url}"
+                    print(f"Failed to download the image from {api_url}")
             else:
                 print(f"Skipping already generated image for prompt: {scene}")
-        if generated_images:
-            return "\n".join(generated_images)
-        else:
-            return "All requested images have been generated."
+        return generated_image_paths # Return the list of image paths
     else:
-        return "I'm ready to create images! Please provide a list of image descriptions using the format: ![Image Request](description of image) or Images: description"
+        print("I'm ready to create images! Please provide a list of image descriptions using the format: ![Image Request](description of image) or Images: description")
+        return [] # Return an empty list if no scenes are found
 
 def find_all_scenes(discussion_history: str) -> List[str]:
     """
