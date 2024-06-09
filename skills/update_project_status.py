@@ -1,3 +1,4 @@
+# TeamForgeAI/skills/update_project_status.py
 """
 Skill module for updating project status based on discussion history in TeamForgeAI.
 """
@@ -32,7 +33,7 @@ def update_project_status(query: str = "", agents_data: list = None, discussion_
 
     # Provide user feedback in the discussion history
     if status_message != "No updates found in the discussion history.":
-        st.session_state.discussion_history += f"Project_Manager_LlamaBook: Skill 'update_project_status' result: {status_message}\n\n===\n\n"
+        st.session_state.discussion_history += f"Project_Manager: Skill 'update_project_status' result: {status_message}\n\n===\n\n"
         st.session_state["trigger_rerun"] = True  # Trigger a rerun to display the update
     return status_message
 
@@ -56,9 +57,9 @@ def update_checklists(discussion_history: str, current_project: CurrentProject) 
 
         # Look for more specific patterns indicating actual completion
         completion_patterns = [
-            rf"\*\*Objective\s*{i+1}:\*\*.*(?:is\s*complete|is\s*done|has\s*been\s*achieved|is\s*finished|is\s*ready)",
-            rf"I\s*have\s*(?:completed|finished|done).*\*\*Objective\s*{i+1}:\*\*",
-            rf"(?:Completed|Finished|Done).*\*\*Objective\s*{i+1}:\*\*",
+            rf"\*\*Objective {i+1}:\*\*.*(?:is\s*complete|is\s*done|has\s*been\s*achieved|is\s*finished|is\s*ready)",
+            rf"I\s*have\s*(?:completed|finished|done).*\*\*Objective {i+1}:\*\*",
+            rf"(?:Completed|Finished|Done).*\*\*Objective {i+1}:\*\*",
         ]
         if any(re.search(pattern, discussion_history, re.IGNORECASE) for pattern in completion_patterns):
             current_project.mark_objective_done(i)
@@ -70,10 +71,10 @@ def update_checklists(discussion_history: str, current_project: CurrentProject) 
 
         # Look for more specific patterns indicating actual completion or submission
         completion_patterns = [
-            rf"\*\*Deliverable\s*{i+1}:\*\*.*(?:is\s*complete|is\s*done|has\s*been\s*submitted|has\s*been\s*provided|is\s*finished|is\s*ready)",
-            rf"I\s*have\s*(?:completed|finished|done|submitted|provided).*\*\*Deliverable\s*{i+1}:\*\*",
-            rf"(?:Completed|Finished|Done|Submitted|Provided).*\*\*Deliverable\s*{i+1}:\*\*",
-            rf"Here's.*\*\*Deliverable\s*{i+1}:\*\*",
+            rf"\*\*Deliverable {i+1}:\*\*.*(?:is\s*complete|is\s*done|has\s*been\s*submitted|has\s*been\s*provided|is\s*finished|is\s*ready)",
+            rf"I\s*have\s*(?:completed|finished|done|submitted|provided).*\*\*Deliverable {i+1}:\*\*",
+            rf"(?:Completed|Finished|Done|Submitted|Provided).*\*\*Deliverable {i+1}:\*\*",
+            rf"Here's.*\*\*Deliverable {i+1}:\*\*",
         ]
         if any(re.search(pattern, discussion_history, re.IGNORECASE) for pattern in completion_patterns):
             current_project.mark_deliverable_done(i)
