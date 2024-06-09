@@ -44,7 +44,7 @@ def rephrase_prompt(user_request: str) -> str:
         return None
     ollama_url = st.session_state.get("ollama_url", "http://localhost:11434")
     url = f"{ollama_url}/api/generate"
-    refactoring_prompt = f"""Refactor the following user request into an optimized prompt for an LLM, focusing on clarity   , conciseness, and effectiveness. Provide specific details and examples where relevant. 
+    refactoring_prompt = f"""Refactor the following user request into an optimized prompt for an LLM, focusing on clarity, conciseness, and effectiveness. Provide specific details and examples where relevant. 
 
     Ensure the rephrased prompt includes the following sections:
     - Goal: A clear and concise statement of the overall objective.
@@ -157,8 +157,8 @@ def get_agents_from_text(text: str) -> tuple:
 
             When communicating with other agents:
             * Use the following format for instructions:
-                - Objective [number]: [objective text] - Assigned to: [agent_name]
-                - Deliverable [number]: [deliverable text] - Assigned to: [agent_name]
+                - **Objective [number]:** [objective text] - **Assigned to:** [agent_name]
+                - **Deliverable [number]:** [deliverable text] - **Assigned to:** [agent_name]
             * Request images, use the following format: ![Image Request]: (description of image)
                 - Example: Image: Corgi riding a motorcycle through a busy city street scene
             * Focus your communication on:
@@ -435,8 +435,8 @@ def get_workflow_from_agents(agents: list) -> tuple:
     Actively monitor the progress of the objectives and deliverables.
     Provide guidance and feedback to the other agents.
     When requesting an image, use the following format: ![Image Request](description of image)
-    When discussing an objective, use the following format: Objective [number]: [objective text]
-    When discussing a deliverable, use the following format: Deliverable [number]: [deliverable text]
+    When discussing an objective, use the following format: **Objective [number]:** [objective text]
+    When discussing a deliverable, use the following format: **Deliverable [number]:** [deliverable text]
     Focus your communication on demonstrating progress towards the project objectives. 
     Before marking an objective or deliverable as complete, ensure that the corresponding tasks have been fully executed and the outcomes meet the project requirements.
     Once the user's request is fully addressed with all aspects considered, conclude your interaction with the command: TERMINATE.
@@ -494,7 +494,7 @@ def zip_files_in_memory(agents_data: dict, workflow_data: dict, crewai_agents: l
         autogen_file_data[f"files/agents/{agent_file_name}"] = agent_file_data # Modified path
 
     # Add skill files to the Autogen ZIP if any agent has the skill
-    skills_to_add = ["fetch_web_content", "web_search", "generate_sd_images", "generate_agent_instructions", "update_project_status", "summarize_project_status"]
+    skills_to_add = ["fetch_web_content", "web_search", "generate_sd_images", "generate_agent_instructions", "update_project_status", "summarize_project_status", "plot_diagram"]
     for skill in skills_to_add:
         for agent_data in agents_data.values():
             if skill in agent_data.get("skills", []):
