@@ -1,3 +1,4 @@
+# TeamForgeAI/skills/summarize_project_status.py
 import streamlit as st
 from current_project import CurrentProject
 import re
@@ -60,10 +61,10 @@ def update_checklists(discussion_history: str, current_project: CurrentProject) 
 
         # Look for broader patterns indicating completion
         completion_patterns = [
-            rf"\*\*Objective\s*{i+1}:\*\*.*(?:complete|done|finished|achieved|addressed|ready)",
-            rf"I\s*have\s*(?:complete|done|finished).*\*\*Objective\s*{i+1}:\*\*",
-            rf"\*\*Objective\s*{i+1}:\*\*.*(?:is\s*complete|is\s*done|is\s*finished|has\s*been\s*achieved|looks\s*good|sounds\s*great|we've\s*got\s*that\s*covered)",
-            rf"(?:great\s*job|well\s*done|nice\s*work).*\*\*Objective\s*{i+1}:\*\*",
+            rf"\*\*Objective {i+1}:\*\*.*(?:complete|done|finished|achieved|addressed|ready)",
+            rf"I\s*have\s*(?:complete|done|finished).*\*\*Objective {i+1}:\*\*",
+            rf"\*\*Objective {i+1}:\*\*.*(?:is\s*complete|is\s*done|is\s*finished|has\s*been\s*achieved|looks\s*good|sounds\s*great|we've\s*got\s*that\s*covered)",
+            rf"(?:great\s*job|well\s*done|nice\s*work).*\*\*Objective {i+1}:\*\*",
         ]
         if any(re.search(pattern, discussion_history, re.IGNORECASE) for pattern in completion_patterns):
             current_project.mark_objective_done(i)
@@ -75,10 +76,10 @@ def update_checklists(discussion_history: str, current_project: CurrentProject) 
 
         # Look for broader patterns indicating completion
         completion_patterns = [
-            rf"\*\*Deliverable\s*{i+1}:\*\*.*(?:complete|done|finished|submitted|provided|ready)",
-            rf"I\s*have\s*(?:complete|done|finished|submitted|provided).*\*\*Deliverable\s*{i+1}:\*\*",
-            rf"\*\*Deliverable\s*{i+1}:\*\*.*(?:is\s*complete|is\s*done|is\s*finished|has\s*been\s*submitted|has\s*been\s*provided)",
-            rf"(?:here's|i've\s*created|i've\s*finished).*\*\*Deliverable\s*{i+1}:\*\*",
+            rf"\*\*Deliverable {i+1}:\*\*.*(?:complete|done|finished|submitted|provided|ready)",
+            rf"I\s*have\s*(?:complete|done|finished|submitted|provided).*\*\*Deliverable {i+1}:\*\*",
+            rf"\*\*Deliverable {i+1}:\*\*.*(?:is\s*complete|is\s*done|is\s*finished|has\s*been\s*submitted|has\s*been\s*provided)",
+            rf"(?:here's|i've\s*created|i've\s*finished).*\*\*Deliverable {i+1}:\*\*",
         ]
         if any(re.search(pattern, discussion_history, re.IGNORECASE) for pattern in completion_patterns):
             current_project.mark_deliverable_done(i)
