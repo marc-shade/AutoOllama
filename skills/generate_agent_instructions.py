@@ -47,7 +47,7 @@ def generate_instructions(current_project: CurrentProject, agents_data: list = N
         else:
             agent_name = st.session_state["objective_assignments"][i]
             instructions += f"**Objective {i+1}:** {obj['text']} - **Status:** In Progress\n"
-            instructions += f"   - Assigned to: **{agent_name}**\n"
+            instructions += f"   - **Assigned to:** {agent_name}\n"
     instructions += "\n"
 
     # Assign deliverables
@@ -64,7 +64,7 @@ def generate_instructions(current_project: CurrentProject, agents_data: list = N
             else:
                 agent_name = st.session_state["deliverable_assignments"][i]
                 instructions += f"**Deliverable {i+1}:** {deliverable['text']} - **Status:** In Progress\n"
-                instructions += f"   - Assigned to: **{agent_name}**\n"
+                instructions += f"   - **Assigned to:** {agent_name}\n"
         instructions += "\n"
 
     # If all objectives and deliverables are done, the project is complete
@@ -148,7 +148,7 @@ Please create a captivating and engaging storyline that fulfills this objective.
 
 * **Title:** A creative and engaging title for the children's book.
 * **Logline:** A concise summary of the story's plot.
-* **Characters:** Introduce the main character (a lovable llama) and any supporting characters.
+* **Characters:** Introduce the main character and any supporting characters.
 * **Setting:** Describe the world where the story takes place.
 * **Plot:** Outline the key events of the story, including the beginning, rising action, climax, falling action, and resolution.
 * **Themes:** Highlight the themes and messages you plan to incorporate.
@@ -159,7 +159,7 @@ Remember to use clear and descriptive language, and ensure the storyline is age-
     elif "Illustration" in agent_name:
         prompt += f"""The project goal is: {current_project.goal}
 
-Please design visually appealing illustrations that bring the llama character and story to life. Consider the target audience and create illustrations that are:
+Please design visually appealing illustrations that bring the character and story to life. Consider the target audience and create illustrations that are:
 
 * **Engaging and Eye-Catching:** Use bright colors, interesting compositions, and expressive characters to capture the attention of young readers.
 * **Age-Appropriate:** Ensure the illustrations are suitable for the target age group.
