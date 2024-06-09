@@ -1,13 +1,15 @@
+# TeamForgeAI/skills/plot_diagram.py
 import streamlit as st
 import pandas as pd
 import re
 from typing import Optional, List, Dict
+import json
 
-def plot_diagram(query: Optional[List[Dict[str, float]]] = None, discussion_history: str = "") -> str:
+def plot_diagram(query: Optional[str] = None, discussion_history: str = "") -> str:
     """
     Generates an area chart based on the provided query.
 
-    The query should be a list of data points, where each data point is a dictionary with 'x' and 'y' values.
+    The query should be a JSON string representing a list of data points, where each data point is a dictionary with 'x' and 'y' values.
     If no query is provided or no valid data points are found in the discussion history, a default query with a single data point (x=0, y=0) will be used.
 
     For example:
@@ -15,26 +17,28 @@ def plot_diagram(query: Optional[List[Dict[str, float]]] = None, discussion_hist
     [{"x": 1, "y": 2}, {"x": 2, "y": 5}, {"x": 3, "y": 8}]
     ```
 
-    :param query: A list containing the data points for the chart.
+    :param query: A JSON string containing the data points for the chart.
     :param discussion_history: The history of the discussion.
-    :return: An error message if an error occurs, otherwise None.
+    :return: A JSON string representing the chart data, or an error message if an error occurs.
     """
-    if query is None:
-        query = extract_data_points(discussion_history)
-        # --- If no valid data points are found, use a default query ---
-        if not query:
-            query = [{"x": 0, "y": 0}]
-
     try:
+        if query is None:
+            query = extract_data_points(discussion_history)
+            # --- If no valid data points are found, use a default query ---
+            if not query:
+                query = [{"x": 0, "y": 0}]
+        else:
+            # --- If a query is provided, try to parse it as JSON ---
+            query = json.loads(query)
+
         # Validate query format
         if not isinstance(query, list):
             raise ValueError("Query must be a list.")
         if not all(isinstance(item, dict) and 'x' in item and 'y' in item for item in query):
             raise ValueError("Each item in the query must be a dictionary with 'x' and 'y' keys.")
-        
-        df = pd.DataFrame(query)  # Create DataFrame directly from the list
-        st.area_chart(df.set_index('x'))
-        return "Chart successfully created"
+
+        # --- Return the chart data as a JSON string ---
+        return json.dumps(query)
     except Exception as e:
         return f"Error: Invalid data format for chart: {e}"  # Return an error message
 
@@ -71,6 +75,9 @@ if __name__ == "__main__":
     discussion_history = st.session_state.get("discussion_history", "")
 
     # Generate and display the chart
-    error_message = plot_diagram(discussion_history=discussion_history)
-    if error_message:
-        st.error(error_message)
+    chart_data = plot_diagram(discussion_history=discussion_history)
+    if chart_data.startswith("Error:"):
+        st.error(chart_data)
+    else:
+        st.session_state.chart_data = chart_data
+        st.rerun()
