@@ -86,6 +86,11 @@ def display_discussion_and_whiteboard() -> None:
             st.session_state.selected_discussion = selected_discussion
             st.session_state.discussion_history = load_discussion_history(selected_discussion)
 
+        # Add a button to start a new discussion
+        if st.button("Start New Discussion"):
+            st.session_state.selected_discussion = ""
+            st.session_state.discussion_history = ""
+
     with tab6:  # Objectives tab
         if "current_project" in st.session_state:
             current_project = st.session_state.current_project
@@ -102,7 +107,7 @@ def display_discussion_and_whiteboard() -> None:
             for index, deliverable in enumerate(current_project.deliverables):
                 checkbox_key = f"deliverable_{index}"
                 # Link the checkbox to the handle_checkbox_change function
-                st.checkbox(deliverable["text"], value=deliverable["done"], key=checkbox_key, on_change=handle_checkbox_change, args=(checkbox_key, not deliverable["done"]))
+                st.checkbox(deliverable["text"], value=deliverable["done"], key=checkbox_key, on_change=handle_checkbox_change, args=(checkbox_key, not objective["done"]))
             st.session_state.current_project = current_project  # Update the session state
     with tab8:  # Goal tab
         if "current_project" in st.session_state:
