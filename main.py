@@ -70,10 +70,11 @@ def main() -> None:
 
         # Display the virtual office with the selected background
         st.markdown('<div class="virtual-office-column">', unsafe_allow_html=True)
-        with open(selected_background, "rb") as file:
-            image_data = file.read()
-            background_image_b64 = base64.b64encode(image_data).decode("utf-8")
-        display_virtual_office(background_image_b64)
+        if selected_background:
+            with open(selected_background, "rb") as file:
+                image_data = file.read()
+                background_image_b64 = base64.b64encode(image_data).decode("utf-8")
+            display_virtual_office(background_image_b64)
         st.markdown('</div>', unsafe_allow_html=True)
 
     with column2:
