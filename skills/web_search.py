@@ -1,3 +1,4 @@
+# TeamForgeAI/skills/update_project_status.py
 import re
 from serpapi import GoogleSearch
 import streamlit as st
@@ -19,7 +20,7 @@ def web_search(query: str, search_engine: str = "google", result_count: int = 3,
     search = GoogleSearch({
         "engine": search_engine,
         "q": full_query,
-        "api_key": "your_api_key_goes_here",
+        "api_key": "your_key_goes_here",
         "num": result_count
     })
     
