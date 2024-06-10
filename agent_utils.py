@@ -137,9 +137,11 @@ def get_agents_from_text(text: str) -> tuple:
             "tools": {"type": "array", "items": {"type": "string"}},
             "ollama_url": {"type": "string"},
             "temperature": {"type": "number"},
-            "model": {"type": "string"}
+            "model": {"type": "string"},
+            "db_path": {"type": "string"},
+            "enable_memory": {"type": "boolean"}
         },
-        "required": ["expert_name", "description", "skills", "tools", "ollama_url", "temperature", "model"],
+        "required": ["expert_name", "description", "skills", "tools", "ollama_url", "temperature", "model", "db_path", "enable_memory"],
     }
     system_prompt = """You will be given a JSON schema to follow for your response. Respond with valid JSON matching the provided schema."""
     # Provide a clear example of the expected JSON structure
@@ -172,7 +174,9 @@ def get_agents_from_text(text: str) -> tuple:
             "tools": ["Trello", "Jira", "Asana"],
             "ollama_url": "http://localhost:11434",
             "temperature": 0.2,
-            "model": "mistral:instruct"
+            "model": "mistral:instruct",
+            "db_path": "./db/Project_Manager",
+            "enable_memory": True
         },
         {
             "expert_name": "Storyline_Designer",
@@ -195,7 +199,9 @@ def get_agents_from_text(text: str) -> tuple:
             "tools": ["Celtx", "Final Draft", "Trello"],
             "ollama_url": "http://localhost:11434",
             "temperature": 0.5,
-            "model": "mistral:instruct"
+            "model": "mistral:instruct",
+            "db_path": "./db/Storyline_Designer",
+            "enable_memory": True
         },
         {
             "expert_name": "Illustration_Designer",
@@ -218,7 +224,9 @@ def get_agents_from_text(text: str) -> tuple:
             "tools": ["Adobe Illustrator", "Procreate", "Photoshop"],
             "ollama_url": "http://localhost:11434",
             "temperature": 0.2,
-            "model": "mistral:instruct"
+            "model": "mistral:instruct",
+            "db_path": "./db/Illustration_Designer",
+            "enable_memory": True
         },
         {
             "expert_name": "Copywriter",
@@ -241,7 +249,9 @@ def get_agents_from_text(text: str) -> tuple:
             "tools": ["Grammarly", "Hemingway Editor", "Google Docs"],
             "ollama_url": "http://localhost:11434",
             "temperature": 0.4,
-            "model": "mistral:instruct"
+            "model": "mistral:instruct",
+            "db_path": "./db/Copywriter",
+            "enable_memory": True
         },
         {
             "expert_name": "Editor",
@@ -264,7 +274,9 @@ def get_agents_from_text(text: str) -> tuple:
             "tools": ["Grammarly", "ProWritingAid", "Microsoft Word"],
             "ollama_url": "http://localhost:11434",
             "temperature": 0.3,
-            "model": "mistral:instruct"
+            "model": "mistral:instruct",
+            "db_path": "./db/Editor",
+            "enable_memory": True
         },
         {
             "expert_name": "Web_Researcher",
@@ -287,7 +299,9 @@ def get_agents_from_text(text: str) -> tuple:
             "tools": ["Google Search", "Wikipedia", "Research Databases"],
             "ollama_url": "http://localhost:11434",
             "temperature": 0.2,
-            "model": "mistral:instruct"
+            "model": "mistral:instruct",
+            "db_path": "./db/Web_Researcher",
+            "enable_memory": True
         },
     ]
 
@@ -330,8 +344,10 @@ def get_agents_from_text(text: str) -> tuple:
                 ollama_url = agent_data.get("ollama_url", "http://localhost:11434")
                 temperature = agent_data.get("temperature", 0.1)
                 model = agent_data.get("model", "mistral:instruct")
+                db_path = agent_data.get("db_path", f"./db/{expert_name}") # Set db_path here
+                enable_memory = agent_data.get("enable_memory", False)
                 autogen_agent, crewai_agent = create_agent_data(
-                    expert_name, description, skills, tools, ollama_url=ollama_url, temperature=temperature, model=model
+                    expert_name, description, skills, tools, ollama_url=ollama_url, temperature=temperature, model=model, db_path=db_path, enable_memory=enable_memory
                 )
                 autogen_agents.append(autogen_agent)
                 crewai_agents.append(crewai_agent)
@@ -348,6 +364,8 @@ def get_workflow_from_agents(agents: list) -> tuple:
     """Generates workflow data from a list of agents."""
     current_timestamp = datetime.datetime.now().isoformat()
     temperature_value = st.session_state.get("temperature", 0.5)
+    enable_chat_manager_memory = st.session_state.get("enable_chat_manager_memory", False)
+    chat_manager_db_path = st.session_state.get("chat_manager_db_path", "./db/group_chat_manager")
     workflow = {
         "name": "TeamForgeAI Workflow",  # Updated workflow name
         "description": "Workflow auto-generated by TeamForgeAI.",  # Updated description
@@ -387,6 +405,8 @@ def get_workflow_from_agents(agents: list) -> tuple:
                 "code_execution_config": None,
                 "default_auto_reply": "",
                 "description": None,
+                "db_path": chat_manager_db_path,
+                "enable_memory": enable_chat_manager_memory
             },
             "groupchat_config": {
                 "agents": [],
@@ -462,6 +482,8 @@ def get_workflow_from_agents(agents: list) -> tuple:
                 "code_execution_config": None,
                 "default_auto_reply": "",
                 "description": None,
+                "db_path": agent.get("db_path", None),
+                "enable_memory": agent.get("enable_memory", False)
             },
             "timestamp": current_timestamp,
             "user_id": "default",
