@@ -128,7 +128,7 @@ def process_agent_interaction(agent_index: int) -> None:
     # --- Removed st.rerun() from here ---
 
     # --- Update checklists after agent interaction ---   
-if "current_project" in st.session_state:
+    if "current_project" in st.session_state:
         update_checklists(st.session_state.discussion_history, st.session_state.current_project)
         st.session_state.current_project = st.session_state.current_project # Update session state
         # --- Set the flag to trigger a rerun ---
