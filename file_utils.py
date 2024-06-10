@@ -10,7 +10,7 @@ def sanitize_text(text: str) -> str:
 
 emoji_list = ["🐶", "🐱", "🐭", "🐹", "🐰", "🦊", "🐻", "🐼", "🐻‍❄️", "🐨", "🐯", "🦁", "🐮", "🐷", "🐸", "🐵", "🐔", "🐧", "🐦", "🐤", "🐣", "🐥", "🦆", "🦅", "🦉", "🦇", "🐺", "🐗", "🐴", "🦄", "🐝", "🐛", "🦋", "🐌", "🐞", "🐜", "🪲", "🪳", "🪰", "🪱", "🐢", "🐍", "🦎", "🦖", "🦕", "🐙", "🦑", "🦐", "🦞", "🦀", "🐡", "🐠", "🐟", "🐬", "🐳", "🐋", "🦈", "🐊", "🐅", "🐆", "🦓", "🦍", "🦧", "🦣", "🐘", "🦏", "🦛", "🐪", "🐫", "🦒", "🦘", "🦬", "🐃", "🐂", "🐄", "🐎", "🐖", "🐏", "🐑", "🦙", "🐐", "🦌", "🦝", "🦡", "🦃", "🦚", "🦜", "🦢", "🦩", "🕊️", "🦤", "🐉", "🐲", "🌵"]
 
-def create_agent_data(expert_name: str, description: str, skills: list = None, tools: list = None, enable_reading_html: bool = False, ollama_url: str = "http://localhost:11434", temperature: float = 0.10, model: str = "mistral:instruct") -> tuple:
+def create_agent_data(expert_name: str, description: str, skills: list = None, tools: list = None, enable_reading_html: bool = False, ollama_url: str = "http://localhost:11434", temperature: float = 0.10, model: str = "mistral:instruct", db_path: str = None, enable_memory: bool = False) -> tuple:
     """
     Creates agent data for both AutoGen and CrewAI agents.
 
@@ -23,6 +23,8 @@ def create_agent_data(expert_name: str, description: str, skills: list = None, t
         ollama_url (str, optional): The URL of the Ollama endpoint. Defaults to "http://localhost:11434".
         temperature (float, optional): The temperature for the language model. Defaults to 0.10.
         model (str, optional): The name of the language model. Defaults to "mistral:instruct".
+        db_path (str, optional): The path to the agent's database. Defaults to None.
+        enable_memory (bool, optional): Whether to enable memory for the agent. Defaults to False.
 
     Returns:
         tuple: A tuple containing the AutoGen agent data and the CrewAI agent data.
@@ -51,11 +53,13 @@ def create_agent_data(expert_name: str, description: str, skills: list = None, t
                 ],
                 "temperature": temperature, # Use agent-specific temperature or default
                 "timeout": 600,
-                "cache_seed": 42,
+                               "cache_seed": 42,
             },
             "human_input_mode": "NEVER",
             "max_consecutive_auto_reply": 8,
             "system_message": f"You are a helpful assistant that can act as {expert_name} who {sanitized_description}.",
+            "db_path": db_path,
+            "enable_memory": enable_memory
         },
         "description": description,  # Use the original description here
         "emoji": random.choice(emoji_list), # Add a random emoji
@@ -66,6 +70,8 @@ def create_agent_data(expert_name: str, description: str, skills: list = None, t
         "temperature": temperature,
         "model": model,
         "skill": sanitized_skills[0] if sanitized_skills else None,  # Add the first skill to the "skill" field
+        "db_path": db_path,
+        "enable_memory": enable_memory
     }
     crewai_agent_data = {
         "name": expert_name,
