@@ -159,6 +159,16 @@ def edit_agent_properties(agent: dict, teams: list, agents_base_dir: str) -> Non
         else 0,
         key=f"model_{edit_index}",
     )
+    agent["db_path"] = st.text_input(
+        "Database Path",
+        value=agent.get("db_path", f"./db/{agent['config']['name']}"),
+        key=f"db_path_{edit_index}",
+    )
+    agent["enable_memory"] = st.checkbox(
+        "Enable Memory",
+        value=agent.get("enable_memory", False),
+        key=f"enable_memory_{edit_index}",
+    )
 
     if st.button("Regenerate", key=f"regenerate_{edit_index}"):
         new_description = regenerate_agent_description(agent)
