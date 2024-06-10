@@ -42,6 +42,10 @@ def handle_checkbox_change(key: str, value: bool) -> None:
                 current_project.mark_deliverable_undone(index)
         st.session_state.current_project = current_project
 
+def handle_chat_manager_memory_change():
+    """Callback function to handle changes to the Chat Manager Memory checkbox."""
+    st.session_state.enable_chat_manager_memory = not st.session_state.enable_chat_manager_memory
+
 def display_discussion_and_whiteboard() -> None:
     """Displays the discussion history and whiteboard in separate tabs."""
     if "discussion_history" not in st.session_state:
@@ -116,7 +120,7 @@ def display_discussion_and_whiteboard() -> None:
         else:
             st.warning("No goal found. Please enter a user request.")
     with tab9:  # Chat Manager tab
-        column3, column4, column5 = st.columns([3, 3, 3])
+        column3, column4, column5, column6 = st.columns([3, 3, 3, 2])
         with column3:
             st.text_input(
                 "Endpoint",
@@ -147,6 +151,11 @@ def display_discussion_and_whiteboard() -> None:
             )
             st.query_params["model"] = [st.session_state.selected_model]  # Correct syntax
             st.session_state.model = st.session_state.selected_model  # Update model in session state
+        with column6:
+            # Link the checkbox to the callback function
+            st.checkbox("Chat Manager Memory", value=st.session_state.get("enable_chat_manager_memory", True), key="enable_chat_manager_memory", on_change=handle_chat_manager_memory_change)
+            if st.session_state.enable_chat_manager_memory:
+                st.text_input("Chat Manager DB Path", key="chat_manager_db_path", value=st.session_state.get("chat_manager_db_path", "./db/group_chat_manager"))
 
 
 def display_discussion_modal() -> None:
