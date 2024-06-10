@@ -55,6 +55,10 @@ if "selected_background" not in st.session_state:
     st.session_state.selected_background = ""
 if "current_project" not in st.session_state:
     st.session_state.current_project = CurrentProject()
+if "enable_chat_manager_memory" not in st.session_state:
+    st.session_state.enable_chat_manager_memory = True # Chat Manager memory is ON by default
+if "chat_manager_db_path" not in st.session_state:
+    st.session_state.chat_manager_db_path = "./db/group_chat_manager"
 
 # Load selected discussion into session state
 if st.session_state.selected_discussion:
