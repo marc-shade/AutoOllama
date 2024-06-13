@@ -99,7 +99,8 @@ def display_agents() -> None:
         if os.path.isdir(os.path.join(agents_base_dir, folder))
     ]
 
-    if "agents_data" not in st.session_state:
+    # Load agents from files if agents_data is empty
+    if not st.session_state.get("agents_data"):
         st.session_state["agents_data"] = load_agents_from_json(
             os.path.join(agents_base_dir, st.session_state["current_team"])
         )
@@ -170,7 +171,7 @@ def display_agents() -> None:
             "skill": new_agent_skills,
             "tools": [],
             "ollama_url": "http://localhost:11434",
-            "temperature": 0.10,
+            "temperature": 0.20,
             "model": new_agent_model,
         }
         st.session_state.agents_data.append(new_agent)
