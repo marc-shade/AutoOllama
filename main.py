@@ -23,7 +23,8 @@ from ui.virtual_office import display_virtual_office, load_background_images
 from current_project import CurrentProject
 from skills.update_project_status import update_project_status
 from skills.summarize_project_status import summarize_project_status
-from autogen.agentchat import GroupChat, GroupChatManager, ConversableAgent # Import for automated group chat
+from autogen.agentchat import ConversableAgent, GroupChat, GroupChatManager # Import for automated group chat
+
 
 # Initialize session state variables if they are not already present
 if "trigger_rerun" not in st.session_state:
