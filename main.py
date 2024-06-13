@@ -163,7 +163,7 @@ class OllamaGroupChatManager(GroupChatManager):
             current_speaker = self.select_next_speaker(self.groupchat)
             reply = self.generate_reply(messages, current_speaker.name)
             messages.append({'content': reply, 'sender': current_speaker.name})
-            self.groupchat.messages.append({'sender': current_speaker.name, 'content':reply})
+            self.groupchat.messages.append({'sender': current_speaker.name, 'content': reply})
             update_discussion_and_whiteboard(current_speaker.name, reply, "")  # Update discussion history
 
 def main() -> None:
