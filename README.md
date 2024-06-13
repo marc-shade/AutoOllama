@@ -22,6 +22,9 @@
 
 - **AI-Powered Agent Creation:** Generate specialized AI agents based on your project description. Each agent possesses unique skills and tools tailored to their role.
 - **Collaborative Workflow:** Agents interact and collaborate to solve problems, generate ideas, and complete tasks.
+- **Agent Memory:** All agents have the option to retain long-term memory.
+- **Auto Mode:** Let the chat_manager agent take the lead and manage the agents in a group chat workflow!
+- **Project Context Continuity:** You can switch back and forth between auto and manual mode while working on the same goal. You choose how you want to work without losing your work. 
 - **Project Goal, Objectives, and Deliverables:** Define and track your project's overall goal, specific objectives, and tangible deliverables.
 - **Skill Integration:** Integrate custom Python skills to extend agent capabilities and automate tasks.
 - **Web Search and Content Summarization:** Agents can perform web searches and summarize content from provided URLs.
