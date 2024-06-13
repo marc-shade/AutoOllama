@@ -11,3 +11,4 @@ matplotlib
 streamlit-chat
 autogen
 openai
+pyautogen
