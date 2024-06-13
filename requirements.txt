@@ -12,3 +12,4 @@ streamlit-chat
 autogen
 openai
 pyautogen
+chromadb
