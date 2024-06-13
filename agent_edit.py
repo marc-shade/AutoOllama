@@ -309,8 +309,8 @@ def download_agent_file(expert_name: str) -> None:
         re.sub(r"[^a-zA-Z0-9\s]", "", expert_name).lower().replace(" ", "_")
     )
     agents_dir = os.path.abspath(
-        os.path.join(os.path.dirname(__file__), "files", "agents")
-    )  # Modified path
+        os.path.join(os.path.dirname(__file__), "..", "files", "agents") # Corrected path
+    )
     json_file = os.path.join(agents_dir, f"{formatted_expert_name}.json")
 
     if os.path.exists(json_file):
@@ -328,7 +328,7 @@ def download_agent_file(expert_name: str) -> None:
 def delete_agent(index: int) -> None:
     """Deletes an agent from the system."""
     agents_base_dir = os.path.abspath(
-        os.path.join(os.path.dirname(__file__), "..", "TeamForgeAI", "files", "agents")
+        os.path.join(os.path.dirname(__file__), "..", "TeamForgeAI", "files", "agents") # Corrected path
     )
     if 0 <= index < len(st.session_state.agents_data):
         agent = st.session_state.agents_data[index]
@@ -339,6 +339,7 @@ def delete_agent(index: int) -> None:
         # Construct the absolute path to the agent file
         json_file = os.path.join(agents_base_dir, current_team, f"{expert_name}.json")
 
+        # Delete the agent file
         if os.path.exists(json_file):
             os.remove(json_file)
             print(f"JSON file deleted: {json_file}")
