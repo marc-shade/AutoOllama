@@ -1,7 +1,7 @@
 # TeamForgeAI/agent_interactions.py
 import time
-import json
-import re
+import json # Import the json module
+import re # Import the re module
 
 import streamlit as st
 
