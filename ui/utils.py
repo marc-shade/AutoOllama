@@ -1,312 +1,221 @@
-# TeamForgeAI/ui/virtual_office.py
+# TeamForgeAI/ui/utils.py
 
 import os
-import base64
+import time
 import streamlit as st
-import random
+import pandas as pd
+import re
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
+from file_utils import create_agent_data, sanitize_text, load_skills, save_agent_to_json
+from agent_utils import rephrase_prompt, get_agents_from_text, get_workflow_from_agents, zip_files_in_memory
 
-# --- Function to format markdown with background image ---
-def background_markdown(background_image: str) -> str:
-    """Returns a Markdown string with embedded CSS for styling the virtual office."""
-    return f"""
-    <style>
-    :root {{
-        --primary-color: #007bff; /* Blue */
-        --secondary-color: #dc3545; /* Red */
-        --text-color: #000; /* Black for light mode */
-        --background-color: #FFF; /* White */
-        --sidebar-background-color: #FFF; /* White */
-        --virtual-office-overlay: transparent; /* Default to transparent */
-    }}
+# Directory for saving discussion history
+PROJECT_DIR = 'TeamForgeAI/files/discussions'
+if not os.path.exists(PROJECT_DIR):
+    os.makedirs(PROJECT_DIR)
 
-    /* Override colors in dark mode */
-    @media (prefers-color-scheme: dark) {{
-        :root {{
-            --text-color: #eee; /* Light grey for dark mode */
-            --background-color: #333; /* Dark grey */
-            --sidebar-background-color: #444; /* Darker grey */
-            --virtual-office-overlay: rgba(0, 0, 0, 0.5); /* Dark overlay for dark mode */
-        }}
-    }}
+def list_discussions() -> list:
+    """Lists all saved discussions."""
+    return [f.replace('.txt', '') for f in os.listdir(PROJECT_DIR) if os.path.isfile(os.path.join(PROJECT_DIR, f))]
 
-    /* General styles */
-    body {{
-        font-family: 'Courier New', sans-serif!important;
-        background-color: var(--background-color);
-        font-family: Helvetica, Arial !important;
-        color: black!important; /* Set default font color to black for light mode */
-    }}
+def load_discussion_history(discussion_name: str) -> str:
+    """Loads the discussion history from a text file."""
+    file_path = os.path.join(PROJECT_DIR, f"{discussion_name}.txt")
+    if os.path.exists(file_path):
+        with open(file_path, 'r', encoding="utf-8") as file:
+            return file.read()
+    return ""
 
-    h1 {{
-        font-size: 40px !important;
-        color: #FFF!important;
-        font-family: Helvetica, Arial !important;
-    }}
-    
-    h2 {{
-        font-size: 16px !important;
-        color: var(--text-color)!important;
-        font-family: Helvetica, Arial !important;
-    }}
+def save_discussion_history(history: str, discussion_name: str) -> None:
+    """Saves the discussion history to a text file."""
+    with open(os.path.join(PROJECT_DIR, f"{discussion_name}.txt"), 'w', encoding="utf-8") as file:
+        file.write(history)
+    cleanup_old_files(PROJECT_DIR, max_files=20)
 
-    /* Sidebar styles */
-    .css-1d391kg, .css-1d391kg .css-fblp2m {{
-        background-color: var(--sidebar-background-color) !important;
-        padding: 0px !important;
-        border-radius: 5px !important;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
-        font-family: Helvetica, Arial !important;
-    }}
+def cleanup_old_files(directory: str, max_files: int) -> None:
+    """Deletes old files from the specified directory, keeping only the most recent ones."""
+    files = [os.path.join(directory, file) for file in os.listdir(directory) if os.path.isfile(os.path.join(directory, file))]
+    files.sort(key=os.path.getmtime, reverse=True)
+    for old_file in files[max_files:]:
+        os.remove(old_file)
 
-    .css-1d391kg h1, .css-1d391kg h2 {{
-        color: var(--text-color) !important;
-    }}
-    
-    .logo {{
-        font-size: 50px !important;
-        color: red!important;
-    }}
-    .sidebar .stButton button {{
-        display: block !important;
-        width: 100% !important;
-        padding: 10px 0px !important; /* Added padding for better look */
-        background-color: var(--primary-color) !important;
-        color: #ffffff !important;
-        text-align: center !important;
-        text-decoration: none !important;
-        border-radius: 5px !important;
-        transition: background-color 0.3s !important;
-    }}
-    .sidebar .stButton button:hover {{
-        background-color: #0056b3 !important; /* Darker blue on hover */
-    }}
-    .sidebar a {{
-        display: block !important;
-        color: var(--primary-color) !important;
-        text-decoration: none !important;
-    }}
-    .sidebar a:hover {{
-        text-decoration: underline !important;
-    }}
+def extract_keywords(text: str) -> list:
+    """Extracts keywords from the provided text."""
+    stop_words = set(stopwords.words('english'))  # Define English stop words
+    words = word_tokenize(text) # Tokenize the text
+    keywords = [word for word in words if word.lower() not in stop_words and word.isalnum()] # Filter keywords
+    return keywords
 
-    /* Main content styles */
-    .main .stTextInput input {{
-        width: 100% !important;
-        padding: 10px !important;
-        border: 1px solid #cccccc !important;
-        border-radius: 5px !important;
-        font-family: 'Courier New', sans-serif!important;
-    }}
-    .main .stTextArea textarea {{
-        width: 100% !important;
-        padding: 10px !important;
-        border: 1px solid #cccccc !important;
-        border-radius: 5px !important;
-        resize: none !important;
-        font-family: 'Courier New', sans-serif!important;
-    }}
-    button {{
-        padding: 8px !important;
-        color: #ffffff;
-        cursor: pointer !important;
-        margin: 0!important;
-    }}
-    .main .stButton button {{
-        padding: 10px 20px !important; /* Adjusted padding */
-        background-color: var(--secondary-color) !important;
-        color: #ffffff !important;
-        border: none !important;
-        border-radius: 5px !important;
-        cursor: pointer !important;
-        transition: background-color 0.3s !important;
-    }}
-    .main .stButton button:hover {{
-        background-color: #c82333 !important; /* Darker red on hover */
-    }}
+def get_api_key() -> str:
+    """Returns a hardcoded API key."""
+    return "ollama"
 
-    div.stTabs .stButton button, 
-    div.stTabs .stButton button:hover {{
-        background-color: transparent!important;
-    }}
-
-    /* Model selection styles */
-    .main .stSelectbox select {{
-        width: 100% !important;
-        padding: 3px !important;
-        border: 1px solid #cccccc !important;
-        border-radius: 5px !important;
-        font-family: 'Open Sans'!important;
-    }}
-
-    /* Error message styles */
-    .main .stAlert {{
-        color: var(--text-color) !important;
-    }}
-
-    /* Virtual Office Styles */
-    .virtual-office {{
-        width: 100%;
-        height: 330px; /* Corrected height to 330px */
-        border: 1px solid #ccc;
-        position: relative;
-        overflow: hidden;
-        background-image: url('data:image/png;base64,{background_image}'); /* Apply background image here */
-        background-size: cover;
-        background-position: center;
-        background-color: var(--virtual-office-overlay); /* Use the overlay variable here */
-    }}
-
-    /* Apply background image to ::before pseudo-element */
-    .virtual-office::before {{
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-image: url('data:image/png;base64,{background_image}');
-        background-size: cover;
-        background-position: center;
-        z-index: 1;
-    }}
-
-
-    /* Light mode styles */
-    @media (prefers-color-scheme: light) {{
-        .virtual-office {{
-            background: rgba(0, 0, 0, 0); /* Apply dark overlay only in dark mode */
-        }}
-    }}
-
-    /* Dark mode styles */
-    @media (prefers-color-scheme: dark) {{
-        .virtual-office {{
-            background: rgba(0, 0, 0, 0.5); /* Apply dark overlay only in dark mode */
-        }}
-    }}
-
-    .agent-emoji {{
-        font-size: 40px; /* Default size */
-        position: absolute;
-        transition: left 1s, top 1s, font-size 0.5s; /* Adjust animation duration */
-        filter: brightness(0.8); /* Adjust the brightness value as needed */
-        z-index: 2;
-    }}
-    .agent-emoji.active {{
-        font-size: 80px;
-        filter: brightness(1.1); /* Adjust the brightness value as needed */
-    }}
-
-    /* Speech Bubble Styles */
-    .speech-bubble {{
-        position: absolute;
-        background-color: #333;
-        color: #ccc;
-        border-radius: 11px;
-        padding: 6px;
-        font-size: 16px!important;
-        font-weight: light!important;
-        font-family: 'Courier New', sans-serif!important;
-        margin-top: 16px;
-        margin-left: 20px;
-        display: none;
-        z-index: 3;
-    }}
-    .speech-bubble p, 
-    .speech-bubble li {{
-        font-size: 11px!important;
-        line-height: 100%;
-    }}
-    
-    .agent-emoji.active + .speech-bubble {{
-        display: block; /* Show only for active agent */
-    }}
-
-    /* Ensuring minimum height for the Virtual Office column */
-    .virtual-office-column {{
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-    }}
-    </style>
-    """
-
-def display_virtual_office(background_image: str) -> None:
-    """Displays the virtual office with animated emojis."""
-    agents_data = st.session_state.get("agents_data", [])
-    active_agent_name = st.session_state.get("next_agent", None)  # Get the active agent
-    last_comment = st.session_state.get("last_comment", "")[:400]  # Get the last comment (first X number of characters)
-
-    office_html = """
-    <div class="virtual-office">
-        {}  
-    </div>
-    """
-
-    agent_emojis = ""
-    # Only create emojis if there are agents in agents_data
-    if agents_data:
-        for i, agent_data in enumerate(agents_data):
-            agent_name = agent_data["config"].get("name", f"Agent {i+1}")
-            agent_emoji = agent_data.get("emoji")
-
-            # Skip agents without an emoji
-            if not agent_emoji:
-                continue
-
-            # Apply active class if the agent is the active agent
-            active_class = "active" if agent_name == active_agent_name else ""
-
-            if agent_name == active_agent_name:
-                # Active agent at the top
-                left_pos = 130  # Centered horizontally
-                top_pos = 20
+def handle_begin(session_state: dict) -> None:
+    """Handles the initial processing of the user request."""
+    user_request = session_state.user_request
+    max_retries = 3
+    retry_delay = 2  # in seconds
+    for retry in range(max_retries):
+        try:
+            rephrase_prompt_result = rephrase_prompt(user_request)
+            print(f"Debug: Rephrased text: {rephrase_prompt_result}")
+            if rephrase_prompt_result:
+                session_state.rephrased_request = rephrase_prompt_result
+                autogen_agents, crewai_agents, current_project = get_agents_from_text(rephrase_prompt_result) # Modified to return current_project
+                print(f"Debug: AutoGen Agents: {autogen_agents}")
+                print(f"Debug: CrewAI Agents: {crewai_agents}")
+                if not autogen_agents:
+                    print("Error: No agents created.")
+                    st.warning("Failed to create agents. Please try again.")
+                    return
+                agents_data = {}
+                agents_base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "files", "agents")) # Corrected path
+                for agent in autogen_agents:
+                    agent_name = agent["config"]["name"]
+                    agents_data[agent_name] = agent
+                    # --- Save the generated agents to the current team's directory ---
+                    save_agent_to_json(
+                        agent,
+                        os.path.join(agents_base_dir, st.session_state.current_team, f"{agent_name}.json"),
+                    )
+                print(f"Debug: Agents data: {agents_data}")
+                workflow_data, _ = get_workflow_from_agents(autogen_agents)
+                print(f"Debug: Workflow data: {workflow_data}")
+                print(f"Debug: CrewAI agents: {crewai_agents}")
+                (
+                    autogen_zip_buffer,
+                    crewai_zip_buffer,
+                ) = zip_files_in_memory(agents_data, workflow_data, crewai_agents)
+                session_state.autogen_zip_buffer = autogen_zip_buffer
+                session_state.crewai_zip_buffer = crewai_zip_buffer
+                session_state.agents_data = autogen_agents # Now correctly scoped
+                session_state.current_project = current_project # Store the current project in session state
+                st.session_state["trigger_rerun"] = True # Trigger a rerun
+                break  # Exit the loop if successful
+            print("Error: Failed to rephrase the user request.")
+            st.warning("Failed to rephrase the user request. Please try again.")
+            return  # Exit the function if rephrasing fails
+        except Exception as error:
+            print(f"Error occurred in handle_begin: {str(error)}")
+            if retry < max_retries - 1:
+                print(f"Retrying in {retry_delay} second(s)...")
+                time.sleep(retry_delay)
             else:
-                # Other agents mill around below - Adjusted vertical range
-                left_pos = random.randint(10, 250)
-                top_pos = random.randint(120, 270)  
+                print("Max retries exceeded.")
+                st.warning("An error occurred. Please try again.")
+                return  # Exit the function if max retries are exceeded            
+                
+    # --- Recalculate rephrased_text, autogen_agents, crewai_agents, and current_project ---
+    rephrased_text = session_state.rephrased_request
+    autogen_agents, crewai_agents, current_project = get_agents_from_text(rephrased_text)
+    agents_data = {}
+    agents_base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "files", "agents")) # Corrected path
+    for agent in autogen_agents:
+        agent_name = agent["config"]["name"]
+        agents_data[agent_name] = agent
+        # --- Save the generated agents to the current team's directory ---
+        save_agent_to_json(
+            agent,
+            os.path.join(agents_base_dir, st.session_state.current_team, f"{agent_name}.json"),
+        )
+    workflow_data, _ = get_workflow_from_agents(autogen_agents)
+    (
+        autogen_zip_buffer,
+        crewai_zip_buffer,
+    ) = zip_files_in_memory(agents_data, workflow_data, crewai_agents)
+    session_state.autogen_zip_buffer = autogen_zip_buffer
+    session_state.crewai_zip_buffer = crewai_zip_buffer
+    session_state.agents_data = autogen_agents
+    session_state.current_project = current_project # Store the current project in session state
+    st.rerun() # Rerun to display the agents
 
-            agent_emojis += f'<span id="agent-{i}" class="agent-emoji {active_class}" style="left: {left_pos}px; top: {top_pos}px;">{agent_emoji}</span>'
-            # Add speech bubble for the active agent with the last comment and '...'
-            if active_class:
-                agent_emojis += f'<div class="speech-bubble" style="left: {left_pos + 80}px; top: {top_pos - 30}px;">{last_comment}...</div>'
-
-    # --- Call markdown before the office_html ---
-    st.markdown(background_markdown(background_image), unsafe_allow_html=True)
-    st.markdown(office_html.format(agent_emojis), unsafe_allow_html=True)
-
-    # --- Move JavaScript for animation after the virtual office HTML ---
-    animation_script = """
-    <script>
-    function animateAgents() {
-        const agents = document.querySelectorAll('.agent-emoji');
-        const activeAgent = '""" + (active_agent_name.replace(" ", "_") if active_agent_name else "") + """'; 
-
-        agents.forEach(agent => {
-            if (agent.id.includes(activeAgent)) return; // Don't animate the active agent
-
-            const leftPos = Math.random() * (250 - 10) + 10;
-            const topPos = Math.random() * (270 - 160) + 120; // Adjust vertical range
-            agent.style.left = leftPos + 'px';
-            agent.style.top = topPos + 'px';
-        });
-    }
-    setInterval(animateAgents, 1000); // Adjust animation interval
-    </script>
-    """
-
-    st.markdown(animation_script, unsafe_allow_html=True)
-
-
-@st.cache_resource
-def load_background_images(folder_path: str, cache_key=None) -> str:
-    """Loads background images from the specified folder and returns a random one."""
-    background_images = []
-    for filename in os.listdir(folder_path):
-        if filename.endswith((".png", ".jpg", ".jpeg")):
-            image_path = os.path.join(folder_path, filename)
-            background_images.append(image_path)
-    if background_images:
-        return random.choice(background_images) # Randomly choose a background image path
+def display_download_button() -> None:
+    """Displays download buttons for Autogen and CrewAI files."""
+    if "autogen_zip_buffer" in st.session_state and "crewai_zip_buffer" in st.session_state:
+        column1, column2 = st.columns(2)
+        with column1:
+            st.download_button(
+                label="Download Autogen Files",
+                data=st.session_state.autogen_zip_buffer,
+                file_name="autogen_files.zip",
+                mime="application/zip",
+                key=f"autogen_download_button_{int(time.time())}",
+            )
+        with column2:
+            st.download_button(
+                label="Download CrewAI Files",
+                data=st.session_state.crewai_zip_buffer,
+                file_name="crewai_files.zip",
+                mime="application/zip",
+                key=f"crewai_download_button_{int(time.time())}",
+            )
     else:
-        return None # Return None if no images are found
+        st.warning("No files available for download.")
+
+def display_reset_and_upload_buttons() -> None:
+    """Displays buttons for resetting the session and uploading data."""
+    column1, column2 = st.columns(2)
+    with column1:
+        if st.button("Reset", key="reset_button"):
+            # Define the keys of session state variables to clear
+            keys_to_reset = [
+                "rephrased_request",
+                "discussion",
+                "whiteboard",
+                "user_request",
+                "user_input",
+                "agents",
+                "zip_buffer",
+                "crewai_zip_buffer",
+                "autogen_zip_buffer",
+                "uploaded_file_content",
+                "discussion_history",
+                "last_comment",
+                "user_api_key",
+                "reference_url",
+                "next_agent",
+                "selected_agent_index",
+                "form_agent_name",
+                "form_agent_description",
+                "current_project", # Add current_project to the list of keys to reset
+            ]
+            # Reset each specified key
+            for key in keys_to_reset:
+                if key in st.session_state:
+                    del st.session_state[key]
+            st.session_state.user_input = ""
+            st.experimental_rerun()
+    with column2:
+        uploaded_file = st.file_uploader(
+            "Upload a sample .csv of your data (optional)", type="csv"
+        )
+        if uploaded_file is not None:
+            try:
+                dataframe = pd.read_csv(uploaded_file).head(5)
+                st.write("Data successfully uploaded and read as DataFrame:")
+                st.dataframe(dataframe)
+                st.session_state.uploaded_data = dataframe
+            except Exception as error:
+                st.error(f"Error reading the file: {error}")
+
+def extract_code_from_response(response: str) -> str:
+    """Extracts code blocks from the response."""
+    code_pattern = r"```(.*?)```"
+    code_blocks = re.findall(code_pattern, response, re.DOTALL)
+
+    html_pattern = r"```(.*?)```"
+    code_blocks = re.findall(code_pattern, response, re.DOTALL)
+
+    html_pattern = r"<html.*?>.*?</html>"
+    html_blocks = re.findall(html_pattern, response, re.DOTALL | re.IGNORECASE)
+
+    js_pattern = r"<script.*?>.*?</script>"
+    js_blocks = re.findall(js_pattern, response, re.DOTALL | re.IGNORECASE)
+
+    css_pattern = r"<style.*?>.*?</style>"
+    css_blocks = re.findall(css_pattern, response, re.DOTALL | re.IGNORECASE)
+
+    all_code_blocks = code_blocks + html_blocks + js_blocks + css_blocks
+    unique_code_blocks = list(set(all_code_blocks))
+    return "\n\n".join(unique_code_blocks)
