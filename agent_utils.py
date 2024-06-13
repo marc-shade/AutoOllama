@@ -279,8 +279,7 @@ def get_agents_from_text(text: str) -> tuple:
         },
         {
             "expert_name": "Web_Researcher",
-            "description": """You are a helpful assistant and partner that excels at gathering information, conducting research, and providing insights relevant to the project.
-
+            "description": """You are a helpful assistant and partner that excels at gathering information, conducting research, and providing insights relevant to the project.           
             Your Core Functions are:
             1. Conduct Research: Utilize online resources, databases, and search engines to gather information relevant to the project objectives.
             2. Synthesize Information: Analyze and summarize the collected information, extracting key insights and presenting them in a clear and concise manner.
