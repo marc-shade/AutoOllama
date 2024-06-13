@@ -1,6 +1,6 @@
-# TeamForgeAI/skills/update_project_status.py
+# TeamForgeAI/skills/web_search.py
 import re
-from serpapi import GoogleSearch
+from serpapi.google_search_results import GoogleSearch  # Updated import
 import streamlit as st
 
 def web_search(query: str, search_engine: str = "google", result_count: int = 3, discussion_history: str = "") -> list:
