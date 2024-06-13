@@ -83,6 +83,7 @@ streamlit run TeamForgeAI/main.py
 - Agents will communicate and collaborate within the discussion area.
 - Customize each agent's settings.
 - Refine the agent's prompts dynamically based on the Discussion History context.
+- Click 'Toggle Auto Mode' to put the agents in a group chat for a few turns to work autonomously.
 
 **Skills:**
 
@@ -91,9 +92,9 @@ streamlit run TeamForgeAI/main.py
 The skills are implemented using a 'sure-shot' method, guaranteeing they will trigger without relying solely on an AI prompt. The skills are assigned to an agent, effectively switching them into a sort of 'tools mode' that mandates that they use the tool as a programmatic response. This avoids issues often seen in group chat situations where an agent hallucinates and pretends to run the skill script. When you push the agent button in TeamForgeAI, the agent will always use the skill.
 - 'Web Search' uses Serper, and you must provide your API for this skill to function.
 - 'Fetch Web Content' reads the content of a web page and puts it into the conversation.
-- 'Generate SD Images' creates an image based on the conversation context.
+- 'Generate SD Images' creates an image based on the list of requested images that reflect the context.
 - 'Plot Diagram' allows an agent to generate a plot or graph directly in the UI.
-- 'Update Project Status' and 'Generate Agent Instructions' empower an agent with abilities to manage projects and provide status updates to the team.
+- 'Update Project Status', 'Summarize Project Status', and 'Generate Agent Instructions' empower any agent with these abilities to manage projects and provide status updates to the team.
 
 TeamForgeAI supports custom Python skills that can be integrated into agents. To create a new skill:
 1. Create a new Python file in the skills directory.
