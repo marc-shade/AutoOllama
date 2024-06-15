@@ -1,4 +1,4 @@
-# TeamForgeAI/ui/discussion.py
+# TeamForgeAI/discussion.py
 import streamlit as st
 import os
 import base64
