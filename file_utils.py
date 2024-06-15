@@ -10,7 +10,7 @@ def sanitize_text(text: str) -> str:
 
 emoji_list = ["🐶", "🐱", "🐭", "🐹", "🐰", "🦊", "🐻", "🐼", "🐻‍❄️", "🐨", "🐯", "🦁", "🐮", "🐷", "🐸", "🐵", "🐔", "🐧", "🐦", "🐤", "🐣", "🐥", "🦆", "🦅", "🦉", "🦇", "🐺", "🐗", "🐴", "🦄", "🐝", "🐛", "🦋", "🐌", "🐞", "🐜", "🪲", "🪳", "🪰", "🪱", "🐢", "🐍", "🦎", "🦖", "🦕", "🐙", "🦑", "🦐", "🦞", "🦀", "🐡", "🐠", "🐟", "🐬", "🐳", "🐋", "🦈", "🐊", "🐅", "🐆", "🦓", "🦍", "🦧", "🦣", "🐘", "🦏", "🦛", "🐪", "🐫", "🦒", "🦘", "🦬", "🐃", "🐂", "🐄", "🐎", "🐖", "🐏", "🐑", "🦙", "🐐", "🦌", "🦝", "🦡", "🦃", "🦚", "🦜", "🦢", "🦩", "🕊️", "🦤", "🐉", "🐲", "🌵"]
 
-def create_agent_data(expert_name: str, description: str, skills: list = None, tools: list = None, enable_reading_html: bool = False, ollama_url: str = "http://localhost:11434", temperature: float = 0.10, model: str = "mistral:instruct", db_path: str = None, enable_memory: bool = False) -> tuple:
+def create_agent_data(expert_name: str, description: str, skills: list = None, tools: list = None, enable_reading_html: bool = False, ollama_url: str = "http://localhost:11434", temperature: float = 0.10, model: str = "mistral:instruct", db_path: str = None, enable_memory: bool = False, moa_role: str = "proposer") -> tuple:
     """
     Creates agent data for both AutoGen and CrewAI agents.
 
@@ -18,13 +18,14 @@ def create_agent_data(expert_name: str, description: str, skills: list = None, t
         expert_name (str): The name of the expert.
         description (str): A description of the expert.
         skills (list, optional): A list of skills the expert possesses. Defaults to None.
-        tools (list, optional): A list of tools the expert uses. Defaults to None.
+        tools (list, optional): A list of tools the expert uses. Defaults       to None.
         enable_reading_html (bool, optional): Whether the agent can read HTML. Defaults to False.
         ollama_url (str, optional): The URL of the Ollama endpoint. Defaults to "http://localhost:11434".
         temperature (float, optional): The temperature for the language model. Defaults to 0.10.
         model (str, optional): The name of the language model. Defaults to "mistral:instruct".
         db_path (str, optional): The path to the agent's database. Defaults to None.
         enable_memory (bool, optional): Whether to enable memory for the agent. Defaults to False.
+        moa_role (str, optional): The role of the agent in the MoA workflow. Defaults to "proposer".
 
     Returns:
         tuple: A tuple containing the AutoGen agent data and the CrewAI agent data.
@@ -71,7 +72,8 @@ def create_agent_data(expert_name: str, description: str, skills: list = None, t
         "model": model,
         "skill": sanitized_skills[0] if sanitized_skills else None,  # Add the first skill to the "skill" field
         "db_path": db_path,
-        "enable_memory": enable_memory
+        "enable_memory": enable_memory,
+        "moa_role": moa_role
     }
     crewai_agent_data = {
         "name": expert_name,
