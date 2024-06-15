@@ -138,9 +138,10 @@ def get_agents_from_text(text: str) -> tuple:
             "temperature": {"type": "number"},
             "model": {"type": "string"},
             "db_path": {"type": "string"},
-            "enable_memory": {"type": "boolean"}
+            "enable_memory": {"type": "boolean"},
+            "moa_role": {"type": "string", "enum": ["proposer", "aggregator"]}
         },
-        "required": ["expert_name", "description", "skills", "tools", "ollama_url", "temperature", "model", "db_path", "enable_memory"],
+        "required": ["expert_name", "description", "skills", "tools", "ollama_url", "temperature", "model", "db_path", "enable_memory", "moa_role"],
     }
     system_prompt = """You will be given a JSON schema to follow for your response. Respond with valid JSON matching the provided schema."""
     # Provide a clear example of the expected JSON structure
@@ -175,7 +176,8 @@ def get_agents_from_text(text: str) -> tuple:
             "temperature": 0.2,
             "model": "mistral:instruct",
             "db_path": "./db/Project_Manager",
-            "enable_memory": True
+            "enable_memory": True,
+            "moa_role": "aggregator"
         },
         {
             "expert_name": "Storyline_Designer",
@@ -200,7 +202,8 @@ def get_agents_from_text(text: str) -> tuple:
             "temperature": 0.5,
             "model": "mistral:instruct",
             "db_path": "./db/Storyline_Designer",
-            "enable_memory": True
+            "enable_memory": True,
+            "moa_role": "proposer"
         },
         {
             "expert_name": "Illustration_Designer",
@@ -225,7 +228,8 @@ def get_agents_from_text(text: str) -> tuple:
             "temperature": 0.2,
             "model": "mistral:instruct",
             "db_path": "./db/Illustration_Designer",
-            "enable_memory": True
+            "enable_memory": True,
+            "moa_role": "proposer"
         },
         {
             "expert_name": "Copywriter",
@@ -250,7 +254,8 @@ def get_agents_from_text(text: str) -> tuple:
             "temperature": 0.4,
             "model": "mistral:instruct",
             "db_path": "./db/Copywriter",
-            "enable_memory": True
+            "enable_memory": True,
+            "moa_role": "proposer"
         },
         {
             "expert_name": "Editor",
@@ -275,7 +280,8 @@ def get_agents_from_text(text: str) -> tuple:
             "temperature": 0.3,
             "model": "mistral:instruct",
             "db_path": "./db/Editor",
-            "enable_memory": True
+            "enable_memory": True,
+            "moa_role": "aggregator"
         },
         {
             "expert_name": "Web_Researcher",
@@ -299,7 +305,8 @@ def get_agents_from_text(text: str) -> tuple:
             "temperature": 0.2,
             "model": "mistral:instruct",
             "db_path": "./db/Web_Researcher",
-            "enable_memory": True
+            "enable_memory": True,
+            "moa_role": "proposer"
         },
     ]
 
@@ -344,8 +351,9 @@ def get_agents_from_text(text: str) -> tuple:
                 model = agent_data.get("model", "mistral:instruct")
                 db_path = agent_data.get("db_path", f"./db/{expert_name}") # Set db_path here
                 enable_memory = agent_data.get("enable_memory", False)
+                moa_role = agent_data.get("moa_role", "proposer")
                 autogen_agent, crewai_agent = create_agent_data(
-                    expert_name, description, skills, tools, ollama_url=ollama_url, temperature=temperature, model=model, db_path=db_path, enable_memory=enable_memory
+                    expert_name, description, skills, tools, ollama_url=ollama_url, temperature=temperature, model=model, db_path=db_path, enable_memory=enable_memory, moa_role=moa_role
                 )
                 autogen_agents.append(autogen_agent)
                 crewai_agents.append(crewai_agent)
