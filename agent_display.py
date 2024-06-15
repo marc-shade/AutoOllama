@@ -1,3 +1,4 @@
+# TeamForgeAI/agent_display.py
 import os
 import streamlit as st
 from file_utils import load_agents_from_json, save_agent_to_json, load_skills
@@ -99,13 +100,15 @@ def display_agents() -> None:
         if os.path.isdir(os.path.join(agents_base_dir, folder))
     ]
 
+    # Initialize agents_data
+    agents_data = st.session_state.get("agents_data", [])
+
     # Load agents from files if agents_data is empty
-    if not st.session_state.get("agents_data"):
+    if not agents_data:
         st.session_state["agents_data"] = load_agents_from_json(
             os.path.join(agents_base_dir, st.session_state["current_team"])
         )
-
-    agents_data = st.session_state["agents_data"]
+        agents_data = st.session_state["agents_data"] # Update agents_data after loading
 
     if agents_data:
         st.sidebar.title("Your Agents")
