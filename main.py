@@ -1,18 +1,18 @@
 # TeamForgeAI/main.py
-# Import the configuration first
+# Set up the page to use a wide layout
+import streamlit as st
+st.set_page_config(layout="wide")
+
+# Import the configuration 
 import config
 
 import os
 from datetime import datetime
 import base64
-import streamlit as st
 import random
 import requests
 import time
 import json
-
-# Set up the page to use a wide layout
-st.set_page_config(layout="wide")
 
 from agent_display import display_agents
 from ui.discussion import display_discussion_and_whiteboard, update_discussion_and_whiteboard
@@ -24,6 +24,8 @@ from current_project import CurrentProject
 from skills.update_project_status import update_project_status
 from skills.summarize_project_status import summarize_project_status
 from autogen.agentchat import ConversableAgent, GroupChat, GroupChatManager # Import for automated group chat
+
+from ollama_llm import OllamaLLM # Import OllamaLLM from ollama_llm.py
 
 
 # Initialize session state variables if they are not already present
@@ -74,46 +76,6 @@ if "agents_data" not in st.session_state:
 if st.session_state.selected_discussion:
     loaded_history = load_discussion_history(st.session_state.selected_discussion)
     st.session_state.discussion_history = loaded_history
-
-class OllamaLLM:
-    """A custom LLM wrapper for Ollama."""
-
-    def __init__(self, base_url="http://localhost:11434", api_key=None, model="mistral:instruct", temperature=0.7):
-        self.base_url = base_url
-        self.api_key = api_key
-        self.model = model
-        self.temperature = temperature  # Set default temperature here
-
-    def generate_text(self, prompt, temperature=None, max_tokens=512):
-        """Generates text using the Ollama API."""
-        url = f"{self.base_url}/api/generate"
-        headers = {"Content-Type": "application/json"}
-        if self.api_key:
-            headers["Authorization"] = f"Bearer {self.api_key}"
-        data = {
-            "model": self.model,
-            "prompt": prompt,
-            "options": {
-                "temperature": temperature if temperature is not None else self.temperature, # Use provided temperature or default
-                "max_tokens": max_tokens,
-            },
-        }
-        response = requests.post(url, headers=headers, json=data, stream=True)
-        
-        try:
-            responses = []
-            for line in response.iter_lines():
-                if line:
-                    decoded_line = line.decode('utf-8').strip()
-                    responses.append(json.loads(decoded_line).get("response", ""))
-            return "".join(responses)
-        except ValueError as e:
-            print(f"DEBUG: JSON decode error - {e}")
-            print(f"DEBUG: API response text - {responses}")
-            raise
-        except Exception as e:
-            print(f"DEBUG: Unexpected error - {e}")
-            raise
 
 class OllamaConversableAgent(ConversableAgent):
     """A ConversableAgent that uses OllamaLLM for text generation."""
