@@ -169,6 +169,11 @@ def edit_agent_properties(agent: dict, teams: list, agents_base_dir: str) -> Non
         value=agent.get("enable_memory", False),
         key=f"enable_memory_{edit_index}",
     )
+    agent["enable_moa"] = st.checkbox(
+        "Enable MoA",
+        value=agent.get("enable_moa", False),
+        key=f"enable_moa_{edit_index}",
+    )
 
     if st.button("Regenerate", key=f"regenerate_{edit_index}"):
         new_description = regenerate_agent_description(agent)
