@@ -13,7 +13,7 @@ from skills.update_project_status import update_checklists # Updated import
 from skills.summarize_project_status import summarize_project_status
 from ui.discussion import update_discussion_and_whiteboard  # Corrected import
 from ui.utils import extract_keywords  # Import extract_keywords
-
+from ollama_llm import OllamaLLM # Import OllamaLLM from ollama_llm.py
 
 def process_agent_interaction(agent_index: int) -> None:
     """Handles the interaction with a selected agent."""
@@ -100,25 +100,30 @@ def process_agent_interaction(agent_index: int) -> None:
     st.session_state["update_ui"] = False
 
     # --- If no skill is selected, get the agent's response from the LLM ---
-    response_generator = send_request_to_ollama_api(agent_name, request, agent=agent)
-    full_response = ""
-    for response_chunk in response_generator:
-        if 'done' in response_chunk and response_chunk['done']: # Check if the response is complete
+    if agent.get("enable_moa", False):
+        full_response = execute_moa_workflow(request, st.session_state.agents_data, agent)
+        # Update discussion history with MoA response
+        update_discussion_and_whiteboard(agent_name, full_response, user_input)
+    else:
+        response_generator = send_request_to_ollama_api(agent_name, request, agent=agent)
+        full_response = ""
+        for response_chunk in response_generator:
+            if 'done' in response_chunk and response_chunk['done']: # Check if the response is complete
+                response_text = response_chunk.get("response", "")
+                full_response += response_text
+
+                # --- Enforce image request format before updating discussion history ---
+                full_response = enforce_image_request_format(full_response)
+
+                # --- Update the discussion history AFTER the response is complete ---
+                update_discussion_and_whiteboard(agent_name, full_response, user_input)
+                st.session_state["accumulated_response"] = full_response
+                st.session_state["trigger_rerun"] = True # Set the flag to trigger a rerun
+                break # Exit the loop since the response is complete
             response_text = response_chunk.get("response", "")
             full_response += response_text
-
-            # --- Enforce image request format before updating discussion history ---
-            full_response = enforce_image_request_format(full_response)
-
-            # --- Update the discussion history AFTER the response is complete ---
-            update_discussion_and_whiteboard(agent_name, full_response, user_input)
             st.session_state["accumulated_response"] = full_response
             st.session_state["trigger_rerun"] = True # Set the flag to trigger a rerun
-            break # Exit the loop since the response is complete
-        response_text = response_chunk.get("response", "")
-        full_response += response_text
-        st.session_state["accumulated_response"] = full_response
-        st.session_state["trigger_rerun"] = True # Set the flag to trigger a rerun
 
     # --- Removed duplicate call to update_discussion_and_whiteboard ---
 
@@ -175,3 +180,53 @@ def enforce_image_request_format(text: str) -> str:
         text = text.replace(f"Illustration: {image_request}", f"![Image Request]({image_request})")
         text = text.replace(f"Visual: {image_request}", f"![Image Request]({image_request})")
     return text
+
+def execute_moa_workflow(request: str, agents_data: list, current_agent: dict) -> str:
+    """Executes the Mixture-of-Agents workflow."""
+    # Separate proposers and aggregators
+    proposers = [agent for agent in agents_data if agent.get("moa_role") == "proposer"]
+    aggregators = [agent for agent in agents_data if agent.get("moa_role") == "aggregator"]
+
+    # Layer 1: Proposers generate initial responses
+    layer_1_outputs = []
+    for proposer in proposers:
+        ollama_llm = OllamaLLM(
+            base_url=proposer["ollama_url"],
+            model=proposer["model"],
+            temperature=proposer["temperature"]
+        )
+        response = ollama_llm.generate_text(request)
+        layer_1_outputs.append(response)
+
+    # Subsequent layers: Aggregators refine responses
+    current_responses = layer_1_outputs
+    for i in range(2, 4):  # Adjust the number of layers as needed
+        new_responses = []
+        for aggregator in aggregators:
+            ollama_llm = OllamaLLM(
+                base_url=aggregator["ollama_url"],
+                model=aggregator["model"],
+                temperature=aggregator["temperature"]
+            )
+            aggregate_prompt = f"""You have been provided with a set of responses from various open-source models to the latest user query. Your task is to synthesize these responses into a single, high-quality response. It is crucial to critically evaluate the information provided in these responses, recognizing that some of it may be biased or incorrect. Your response should not simply replicate the given answers but should offer a refined, accurate, and comprehensive reply to the instruction. Ensure your response is well-structured, coherent, and adheres to the highest standards of accuracy and reliability.
+
+            Responses from models:
+            {chr(10).join([f'{j+1}. {response}' for j, response in enumerate(current_responses)])}
+            """
+            response = ollama_llm.generate_text(aggregate_prompt)
+            new_responses.append(response)
+        current_responses = new_responses
+
+    # Final output: Use the current agent as the final aggregator
+    ollama_llm = OllamaLLM(
+        base_url=current_agent["ollama_url"],
+        model=current_agent["model"],
+        temperature=current_agent["temperature"]
+    )
+    aggregate_prompt = f"""You have been provided with a set of responses from various open-source models to the latest user query. Your task is to synthesize these responses into a single, high-quality response. It is crucial to critically evaluate the information provided in these responses, recognizing that some of it may be biased or incorrect. Your response should not simply replicate the given answers but should offer a refined, accurate, and comprehensive reply to the instruction. Ensure your response is well-structured, coherent, and adheres to the highest standards of accuracy and reliability.
+
+    Responses from models:
+    {chr(10).join([f'{j+1}. {response}' for j, response in enumerate(current_responses)])}
+    """
+    moa_response = ollama_llm.generate_text(aggregate_prompt)
+    return moa_response
