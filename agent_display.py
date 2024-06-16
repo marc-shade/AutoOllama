@@ -40,6 +40,7 @@ def agent_button_callback(agent_index: int):
                 user_input = st.session_state.get("user_input", "")
                 rephrased_request = st.session_state.get("rephrased_request", "")
                 discussion_history = st.session_state.get("discussion_history", "")
+                agents_data = st.session_state.get("agents_data", [])  # Get agents_data from session state
 
                 if selected_skill[0] == "web_search":
                     keywords = extract_keywords(rephrased_request) + extract_keywords(discussion_history)
@@ -53,14 +54,17 @@ def agent_button_callback(agent_index: int):
                 else:
                     query = user_input
 
+                teachability = agent.get("teachability", False)
+
                 if selected_skill[0] == "generate_sd_images":
                     skill_result = skill_function(discussion_history=discussion_history)
                 elif selected_skill[0] == "fetch_web_content":
-                    skill_result = skill_function(query=query, discussion_history=discussion_history)
+                    skill_result = skill_function(query=query, discussion_history=discussion_history, teachability=teachability)
                 elif selected_skill[0] == "plot_diagram":
                     skill_result = skill_function(query=query, discussion_history=discussion_history)
                 elif selected_skill[0] == "web_search":
-                    skill_result = skill_function(query=query, discussion_history=discussion_history)
+                    # Pass agents_data and teachability to web_search
+                    skill_result = skill_function(query=query, discussion_history=discussion_history, agents_data=agents_data, teachability=teachability)
                 else:
                     skill_result = skill_function(query=query, agents_data=st.session_state.agents_data, discussion_history=discussion_history)
 
@@ -73,8 +77,9 @@ def agent_button_callback(agent_index: int):
                         st.image(skill_result, caption="Generated Diagram")
                 else:
                     if isinstance(skill_result, list):
+                        # Unpack four elements: title, url, snippet, content
                         formatted_results = "\n".join(
-                            [f"- {title}: {url} ({snippet})" for title, url, snippet in skill_result]
+                            [f"- {title}: {url} ({snippet})\nContent: {content}" for title, url, snippet, content in skill_result]
                         )
                         response_text = formatted_results
                     else:
