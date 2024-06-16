@@ -3,7 +3,7 @@
 import streamlit as st
 st.set_page_config(layout="wide")
 
-# Import the configuration 
+# Import the configuration
 import config
 
 import os
@@ -23,9 +23,11 @@ from ui.virtual_office import display_virtual_office, load_background_images
 from current_project import CurrentProject
 from skills.update_project_status import update_project_status
 from skills.summarize_project_status import summarize_project_status
-from autogen.agentchat import ConversableAgent, GroupChat, GroupChatManager # Import for automated group chat
+from autogen.agentchat import ConversableAgent, GroupChat, GroupChatManager  # Import for automated group chat
+from autogen.agentchat.contrib.capabilities.teachability import Teachability  # Import Teachability
 
-from ollama_llm import OllamaLLM # Import OllamaLLM from ollama_llm.py
+from ollama_llm import OllamaLLM  # Import OllamaLLM from ollama_llm.py
+from search_workflow import initiate_search_workflow
 
 
 # Initialize session state variables if they are not already present
@@ -62,11 +64,12 @@ if "selected_background" not in st.session_state:
 if "current_project" not in st.session_state:
     st.session_state.current_project = CurrentProject()
 if "enable_chat_manager_memory" not in st.session_state:
-    st.session_state.enable_chat_manager_memory = True # Chat Manager memory is ON by default
+    st.session_state.enable_chat_manager_memory = True  # Chat Manager memory is ON by default
 if "chat_manager_db_path" not in st.session_state:
     st.session_state.chat_manager_db_path = "./db/group_chat_manager"
 if "auto_mode" not in st.session_state:
     st.session_state.auto_mode = False  # Auto mode is OFF by default
+
 
 # Ensure agents_data is initialized
 if "agents_data" not in st.session_state:
@@ -77,12 +80,18 @@ if st.session_state.selected_discussion:
     loaded_history = load_discussion_history(st.session_state.selected_discussion)
     st.session_state.discussion_history = loaded_history
 
+# Create a Teachability instance at the application level
+teachability = Teachability(path_to_db_dir="./db/teachability", llm_config={'model': 'mistral:instruct'})
+
 class OllamaConversableAgent(ConversableAgent):
     """A ConversableAgent that uses OllamaLLM for text generation."""
 
     def __init__(self, name, ollama_llm, system_message=None, **kwargs):
-        super().__init__(name=name, system_message=system_message, **kwargs)
+        super().__init__(name=name, system_message=system_message, llm_config=False, **kwargs)  # Pass llm_config=False here
         self.ollama_llm = ollama_llm
+        if 'teachability' in kwargs:
+            kwargs['teachability'].add_to_agent(self)
+            self.teachability = kwargs['teachability']
 
     def generate_reply(self, messages, sender, config=None):
         """Overrides the generate_reply method to use OllamaLLM."""
@@ -215,37 +224,36 @@ def load_agents_from_files():
                 agent_data = json.load(f)
                 st.session_state.agents_data.append(agent_data)
 
-def create_autogen_agent(agent_data: dict):
+def create_autogen_agent(agent_data: dict, teachability=None): # Accept teachability as an argument
     """Creates an AutoGen ConversableAgent from agent data."""
-    from autogen.agentchat import ConversableAgent  # Correct import
-    from autogen.agentchat.contrib.capabilities.teachability import Teachability
-
     # Create OllamaLLM instance for the agent
     ollama_llm = OllamaLLM(
         base_url=agent_data["ollama_url"],
         model=agent_data["model"],
-        api_key=agent_data.get("api_key"),
         temperature=agent_data.get("temperature", 0.7)  # Use temperature from agent_data or default to 0.7
     )
 
-    agent = OllamaConversableAgent(
-        name=agent_data["config"]["name"],
-        ollama_llm=ollama_llm,
-        system_message=agent_data["config"]["system_message"],
-        llm_config=False,  # Pass llm_config=False to prevent OpenAIWrapper creation
-    )
+    agent_kwargs = {
+        "name": agent_data["config"]["name"],
+        "ollama_llm": ollama_llm,
+        "system_message": agent_data["config"]["system_message"],
+    }
 
-    # Only enable memory if not in auto mode
-    if agent_data.get("enable_memory", False) and not st.session_state.auto_mode:
-        teachability = Teachability(path_to_db_dir=agent_data.get("db_path"))
+    agent = OllamaConversableAgent(**agent_kwargs)
+
+    if teachability:
         teachability.add_to_agent(agent)
+
     return agent
 
 def initiate_auto_mode():
     """Initiates the automated group chat workflow."""
     if st.session_state.agents_data and st.session_state.rephrased_request and st.session_state.current_project:
-        # Create agents from session state
-        agents = [create_autogen_agent(agent_data) for agent_data in st.session_state.agents_data]
+        # Disable memory for auto mode
+        st.session_state.enable_chat_manager_memory = False
+        
+        # Create agents from session state, passing None for teachability
+        agents = [create_autogen_agent(agent_data, None) for agent_data in st.session_state.agents_data]
 
         # Create group chat and manager
         group_chat = GroupChat(agents=agents, messages=[], max_round=10)
