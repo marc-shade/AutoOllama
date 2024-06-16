@@ -13,7 +13,7 @@ from autogen.agentchat.contrib.capabilities.teachability import Teachability
 MAX_AGENTS = 3  # Limit the number of agents performing searches
 MAX_SEARCH_RESULTS = 3  # Limit the number of search results per agent
 
-def web_search(query: str, discussion_history: str = "", agents_data: list = None, teachability=True) -> str:
+def web_search(query: str, discussion_history: str = "", agents_data: list = None, teachability=None) -> str:
     """
     Performs a web search using the Google Custom Search API and synthesizes the results using an MoA approach.
 
@@ -59,12 +59,18 @@ def gather_search_results(query: str, discussion_history: str, agents_data: list
                 if e.resp.status in [500, 503]:
                     # Retry for 500 and 503 errors
                     if attempt < max_retries - 1:
+                        print(f"Retrying due to server error ({e.resp.status}): {e.content}")
                         time.sleep(2 ** attempt)  # Exponential backoff
                         continue
                     else:
-                        raise
+                        print(f"Max retries reached for query: {refined_query}. Error: {e.content}")
+                        break
                 else:
-                    raise
+                    print(f"HTTP error encountered: {e.content}")
+                    break
+            except Exception as e:
+                print(f"Unexpected error: {e}")
+                break
     return search_results
 
 def synthesize_search_results(search_results: List[Tuple[str, str, str, str, str]], discussion_history: str, teachability: Teachability) -> str:
