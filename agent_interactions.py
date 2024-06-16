@@ -14,6 +14,7 @@ from skills.summarize_project_status import summarize_project_status
 from ui.discussion import update_discussion_and_whiteboard  # Corrected import
 from ui.utils import extract_keywords  # Import extract_keywords
 from ollama_llm import OllamaLLM # Import OllamaLLM from ollama_llm.py
+from search_workflow import initiate_search_workflow # Import from search_workflow.py
 
 def process_agent_interaction(agent_index: int) -> None:
     """Handles the interaction with a selected agent."""
@@ -62,7 +63,9 @@ def process_agent_interaction(agent_index: int) -> None:
                 st.session_state.get("user_request", "") # Use the original user request instead of the formatted discussion history
              )
             query = " ".join(keywords)
-            request += f"\nYou have been tasked to use the '{selected_skill[0]}' skill to research the following query: '{query}'."
+            # Initiate the search workflow, passing the teachability object
+            initiate_search_workflow(query, create_autogen_agent, OllamaGroupChatManager, update_discussion_and_whiteboard, teachability) # Pass teachability
+            return
         elif selected_skill[0] == "plot_diagram": # Update query for plot_diagram
             query = '{}' # Pass an empty JSON string as a placeholder
             request += f"\nYou have been tasked to use the '{selected_skill[0]}' skill. Analyze the discussion history and determine if there is any data that can be visualized as a diagram. If so, extract the relevant data, interpret keywords, numerical values, and patterns to generate a JSON string with the appropriate parameters for the 'plot_diagram' skill, and then use the skill to create the diagram. If no relevant data is found, or if the user has provided specific instructions for the diagram, follow those instructions instead. Remember to always provide a valid JSON string as parameters for the 'plot_diagram' skill, even if it's an empty dictionary '{{}}'."
@@ -75,7 +78,9 @@ def process_agent_interaction(agent_index: int) -> None:
     # --- If a skill other than generate_sd_images is selected, execute it ---
     if selected_skill and selected_skill[0] != "generate_sd_images":
         skill_function = available_skills[selected_skill[0]]
-        if selected_skill[0] == "plot_diagram":
+        if selected_skill[0] in ["web_search", "fetch_web_content"]:
+            skill_result = skill_function(query=query, discussion_history=st.session_state.discussion_history, teachability=agent.teachability) # Pass teachability to skill_function
+        elif selected_skill[0] == "plot_diagram":
             skill_result = skill_function(query=query, discussion_history=st.session_state.discussion_history) # Pass the query to the skill function
         else:
             skill_result = skill_function(query=query, agents_data=st.session_state.agents_data, discussion_history=st.session_state.discussion_history) # Pass the query to the skill function
@@ -89,6 +94,17 @@ def process_agent_interaction(agent_index: int) -> None:
                 st.session_state.trigger_rerun = True # Trigger a rerun to display the chart
 
             return  # Exit after executing the skill
+
+        if isinstance(skill_result, list):
+            formatted_results = "\n".join(
+                [f"- {title}: {url} ({snippet})" for title, url, snippet in skill_result]
+            )
+            response_text = formatted_results
+        else:
+            response_text = f"Skill '{selected_skill[0]}' result: {skill_result}"
+
+        update_discussion_and_whiteboard(agent_name, response_text, user_input)
+        return
 
     # --- Add user input to the discussion history BEFORE sending to LLM ---
     if user_input:
