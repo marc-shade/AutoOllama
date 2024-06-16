@@ -9,21 +9,21 @@ def initiate_search_workflow(query: str, create_autogen_agent, OllamaGroupChatMa
     # Create agents
     search_agent = create_autogen_agent({
         "config": {"name": "Search Agent", "system_message": "You are a helpful search agent."},
-        "model": "mistral:7b-instruct-v0.2-fp16",
+        "model": "mistral:7b-instruct-v0.2-q8_0",
         "enable_memory": True,
         "db_path": "./db/search_agent"
     }, teachability=teachability)
     
     analyst_agent = create_autogen_agent({
         "config": {"name": "Analyst Agent", "system_message": "You are a helpful analyst agent."},
-        "model": "mistral:7b-instruct-v0.3-q8_0",
+        "model": "mistral:7b-instruct-v0.2-fp16",
         "enable_memory": True,
         "db_path": "./db/analyst_agent"
     }, teachability=teachability)
     
     synthesizer_agent = create_autogen_agent({
         "config": {"name": "Synthesizer Agent", "system_message": "You are a helpful synthesizer agent."},
-        "model": "mistral:7b-instruct-v0.3-q8_0",
+        "model": "mistral:7b-instruct-v0.2-q8_0",
         "enable_memory": True,
         "db_path": "./db/synthesizer_agent"
     }, teachability=teachability)
