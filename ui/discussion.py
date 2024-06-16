@@ -1,9 +1,9 @@
-# TeamForgeAI/discussion.py
 import streamlit as st
 import os
 import base64
 import json
 import pandas as pd
+import re
 
 from ui.utils import extract_code_from_response, display_download_button, list_discussions, load_discussion_history
 from api_utils import get_ollama_models
@@ -43,10 +43,26 @@ def handle_checkbox_change(key: str, value: bool) -> None:
                 current_project.mark_deliverable_undone(index)
         st.session_state.current_project = current_project
 
+def update_query_params():
+    st.query_params.update({
+        "google_api_key": st.session_state.google_api_key,
+        "search_engine_id": st.session_state.search_engine_id,
+        "model": st.session_state.selected_model
+    })
+
 def display_discussion_and_whiteboard() -> None:
     """Displays the discussion history and whiteboard in separate tabs."""
     if "discussion_history" not in st.session_state:
         st.session_state.discussion_history = ""
+
+    query_params = st.query_params.to_dict()
+    if "google_api_key" not in st.session_state:
+        st.session_state.google_api_key = query_params.get("google_api_key", "")
+    if "search_engine_id" not in st.session_state:
+        st.session_state.search_engine_id = query_params.get("search_engine_id", "")
+    if "selected_model" not in st.session_state:
+        st.session_state.selected_model = query_params.get("model", "")
+
     tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8, tab9 = st.tabs(
         ["Most Recent Comment", "Whiteboard", "Gallery", "Charts", "Discussion History", "Objectives", "Deliverables", "Goal", "Chat Manager"]
     )
@@ -108,7 +124,7 @@ def display_discussion_and_whiteboard() -> None:
             for index, deliverable in enumerate(current_project.deliverables):
                 checkbox_key = f"deliverable_{index}"
                 # Link the checkbox to the handle_checkbox_change function
-                st.checkbox(deliverable["text"], value=deliverable["done"], key=checkbox_key, on_change=handle_checkbox_change, args=(checkbox_key, not objective["done"]))
+                st.checkbox(deliverable["text"], value=deliverable["done"], key=checkbox_key, on_change=handle_checkbox_change, args=(checkbox_key, not deliverable["done"]))
             st.session_state.current_project = current_project  # Update the session state
     with tab8:  # Goal tab
         if "current_project" in st.session_state:
@@ -116,8 +132,9 @@ def display_discussion_and_whiteboard() -> None:
             st.text_area("Goal", value=current_project.goal, height=100, key="goal_area")
         else:
             st.warning("No goal found. Please enter a user request.")
+
     with tab9:  # Chat Manager tab
-        column3, column4, column5 = st.columns([3, 3, 3])
+        column3, column4, column5, column6 = st.columns([2, 2, 2, 2])  # Add a new column
         with column3:
             st.text_input(
                 "Endpoint",
@@ -137,24 +154,37 @@ def display_discussion_and_whiteboard() -> None:
             )
 
         with column5:
-            available_models = get_ollama_models(st.session_state.ollama_url)  # Pass the endpoint to get_ollama_models
-            st.session_state.selected_model = st.selectbox(
-                "Model",
-                options=available_models,
-                index=available_models.index(st.session_state.selected_model)
-                if st.session_state.selected_model in available_models
-                else 0,
-                key="model_selection",
+            google_api_key = st.text_input(  # Add input field for Google API key
+                "Google API Key",
+                value=st.session_state.google_api_key,
+                key="google_api_key",
+                on_change=update_query_params,
             )
-            st.query_params["model"] = [st.session_state.selected_model]  # Correct syntax
-            st.session_state.model = st.session_state.selected_model  # Update model in session state
 
+        with column6:
+            search_engine_id = st.text_input(  # Add input field for Search Engine ID
+                "Search Engine ID",
+                value=st.session_state.search_engine_id,
+                key="search_engine_id",
+                on_change=update_query_params,
+            )
+
+        available_models = get_ollama_models(st.session_state.ollama_url)  # Pass the endpoint to get_ollama_models
+        st.session_state.selected_model = st.selectbox(
+            "Model",
+            options=available_models,
+            index=available_models.index(st.session_state.selected_model)
+            if st.session_state.selected_model in available_models
+            else 0,
+            key="model_selection",
+        )
+        st.query_params.update({"model": st.session_state.selected_model})  # Correct syntax
+        st.session_state.model = st.session_state.selected_model  # Update model in session state
 
 def display_discussion_modal() -> None:
     """Displays the discussion history in an expander."""
     with st.expander("Discussion History"):
         st.write(st.session_state.discussion_history)
-
 
 def update_discussion_and_whiteboard(expert_name: str, response: str, user_input: str) -> None:
     """Updates the discussion history and whiteboard with new content."""
@@ -162,17 +192,30 @@ def update_discussion_and_whiteboard(expert_name: str, response: str, user_input
     print(f"Expert Name: {expert_name}")
     print(f"Response: {response}")
     print(f"User Input: {user_input}")
+
     if user_input:
         user_input_text = f"\n\n\n\n{user_input}\n\n"
         st.session_state.discussion_history += user_input_text
+
     response_text = f"{expert_name}:\n\n {response}\n\n===\n\n"
     st.session_state.discussion_history += response_text
-    code_blocks = extract_code_from_response(response)
-    st.session_state.whiteboard = code_blocks
+
+    # Update whiteboard with latest code
+    if expert_name == "Python_Developer":  # Replace with the actual agent name that owns the whiteboard
+        latest_code = extract_latest_code(response)
+        st.session_state.whiteboard = latest_code
+
     st.session_state.last_agent = expert_name
     st.session_state.last_comment = response_text
     print(f"Last Agent: {st.session_state.last_agent}")
     print(f"Last Comment: {st.session_state.last_comment}")
+
+def extract_latest_code(response: str) -> str:
+    """Extracts the latest updated code block from the response."""
+    code_blocks = re.findall(r"```python(.*?)```", response, re.DOTALL)
+    if code_blocks:
+        return f"```python{code_blocks[-1]}```"  # Return the last code block
+    return ""
 
 def display_gallery() -> None:
     """Displays the images in the 'images' folder in a grid of three images per row."""
