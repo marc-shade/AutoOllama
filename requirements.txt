@@ -1,7 +1,7 @@
 streamlit
 requests
 beautifulsoup4
-serpapi
+google-api-python-client
 python-dotenv
 nltk
 pandas
