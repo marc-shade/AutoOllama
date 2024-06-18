@@ -137,11 +137,11 @@ def get_agents_from_text(text: str) -> tuple:
             "ollama_url": {"type": "string"},
             "temperature": {"type": "number"},
             "model": {"type": "string"},
-            "db_path": {"type": "string"},
             "enable_memory": {"type": "boolean"},
+            "db_path": {"type": "string"}, # Add db_path to schema
             "moa_role": {"type": "string", "enum": ["proposer", "aggregator"]}
         },
-        "required": ["expert_name", "description", "skills", "tools", "ollama_url", "temperature", "model", "db_path", "enable_memory", "moa_role"],
+        "required": ["expert_name", "description", "skills", "tools", "ollama_url", "temperature", "model", "enable_memory", "db_path", "moa_role"],
     }
     system_prompt = """You will be given a JSON schema to follow for your response. Respond with valid JSON matching the provided schema."""
     # Provide a clear example of the expected JSON structure
@@ -175,8 +175,8 @@ def get_agents_from_text(text: str) -> tuple:
             "ollama_url": "http://localhost:11434",
             "temperature": 0.2,
             "model": "mistral:instruct",
-            "db_path": "./db/Project_Manager",
             "enable_memory": True,
+            "db_path": "./db/Project_Manager_memory", # Add db_path to example
             "moa_role": "aggregator"
         },
         {
@@ -201,8 +201,8 @@ def get_agents_from_text(text: str) -> tuple:
             "ollama_url": "http://localhost:11434",
             "temperature": 0.5,
             "model": "mistral:instruct",
-            "db_path": "./db/Storyline_Designer",
             "enable_memory": True,
+            "db_path": "./db/Storyline_Designer_memory", # Add db_path to example
             "moa_role": "proposer"
         },
         {
@@ -227,8 +227,8 @@ def get_agents_from_text(text: str) -> tuple:
             "ollama_url": "http://localhost:11434",
             "temperature": 0.2,
             "model": "mistral:instruct",
-            "db_path": "./db/Illustration_Designer",
             "enable_memory": True,
+            "db_path": "./db/Illustration_Designer_memory", # Add db_path to example
             "moa_role": "proposer"
         },
         {
@@ -253,8 +253,8 @@ def get_agents_from_text(text: str) -> tuple:
             "ollama_url": "http://localhost:11434",
             "temperature": 0.4,
             "model": "mistral:instruct",
-            "db_path": "./db/Copywriter",
             "enable_memory": True,
+            "db_path": "./db/Copywriter_memory", # Add db_path to example
             "moa_role": "proposer"
         },
         {
@@ -279,8 +279,8 @@ def get_agents_from_text(text: str) -> tuple:
             "ollama_url": "http://localhost:11434",
             "temperature": 0.3,
             "model": "mistral:instruct",
-            "db_path": "./db/Editor",
             "enable_memory": True,
+            "db_path": "./db/Editor_memory", # Add db_path to example
             "moa_role": "aggregator"
         },
         {
@@ -304,8 +304,8 @@ def get_agents_from_text(text: str) -> tuple:
             "ollama_url": "http://localhost:11434",
             "temperature": 0.2,
             "model": "mistral:instruct",
-            "db_path": "./db/Web_Researcher",
             "enable_memory": True,
+            "db_path": "./db/Web_Researcher_memory", # Add db_path to example
             "moa_role": "proposer"
         },
     ]
@@ -349,7 +349,7 @@ def get_agents_from_text(text: str) -> tuple:
                 ollama_url = agent_data.get("ollama_url", "http://localhost:11434")
                 temperature = agent_data.get("temperature", 0.1)
                 model = agent_data.get("model", "mistral:instruct")
-                db_path = agent_data.get("db_path", f"./db/{expert_name}") # Set db_path here
+                db_path = agent_data.get("db_path", os.path.join("./db", f"{expert_name}_memory")) # Get db_path from agent_data
                 enable_memory = agent_data.get("enable_memory", False)
                 moa_role = agent_data.get("moa_role", "proposer")
                 autogen_agent, crewai_agent = create_agent_data(
@@ -488,7 +488,7 @@ def get_workflow_from_agents(agents: list) -> tuple:
                 "code_execution_config": None,
                 "default_auto_reply": "",
                 "description": None,
-                "db_path": agent.get("db_path", None),
+                "db_path": agent.get("db_path", None), # Include db_path in agent config
                 "enable_memory": agent.get("enable_memory", False)
             },
             "timestamp": current_timestamp,
@@ -534,7 +534,7 @@ def zip_files_in_memory(agents_data: dict, workflow_data: dict, crewai_agents: l
     # Write workflow file to the Autogen ZIP
     workflow_file_name = f"{sanitize_text(workflow_data['name'])}.json"
     workflow_file_data = json.dumps(workflow_data, indent=2)
-    autogen_file_data[f"workflows/{workflow_file_name}"] = workflow_file_data
+    autogen_file_data[f"workflows/{workflow_file_name}"] =   workflow_file_data
 
     # Prepare CrewAI file data
     crewai_file_data = {}
