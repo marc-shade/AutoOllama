@@ -1,32 +1,29 @@
 # TeamForgeAI/search_workflow.py
 from autogen.agentchat import GroupChat, GroupChatManager
 from ollama_llm import OllamaLLM
-from skills.web_search import gather_search_results, synthesize_search_results
-import streamlit as st
+from skills.web_search import gather_search_results, synthesize_search_results # Import the functions
 
-def initiate_search_workflow(query: str, create_autogen_agent, OllamaGroupChatManager, update_discussion_and_whiteboard, teachability=None):
+def initiate_search_workflow(query: str, create_autogen_agent, OllamaGroupChatManager, update_discussion_and_whiteboard, teachability=True): # Accept teachability
     """Initiates the multi-agent search workflow."""
-    # Create agents
+    # Create agents, passing the teachability object
     search_agent = create_autogen_agent({
         "config": {"name": "Search Agent", "system_message": "You are a helpful search agent."},
-        "model": "mistral:7b-instruct-v0.2-q8_0",
-        "enable_memory": True,
-        "db_path": "./db/search_agent"
-    }, teachability=teachability)
-    
-    analyst_agent = create_autogen_agent({
-        "config": {"name": "Analyst Agent", "system_message": "You are a helpful analyst agent."},
         "model": "mistral:7b-instruct-v0.2-fp16",
         "enable_memory": True,
+        "db_path": "./db/search_agent"
+    }, teachability=teachability) # Pass teachability to create_autogen_agent
+    analyst_agent = create_autogen_agent({
+        "config": {"name": "Analyst Agent", "system_message": "You are a helpful analyst agent."},
+        "model": "mistral:7b-instruct-v0.3-q8_0",
+        "enable_memory": True,
         "db_path": "./db/analyst_agent"
-    }, teachability=teachability)
-    
+    }, teachability=teachability) # Pass teachability to create_autogen_agent
     synthesizer_agent = create_autogen_agent({
         "config": {"name": "Synthesizer Agent", "system_message": "You are a helpful synthesizer agent."},
-        "model": "mistral:7b-instruct-v0.2-q8_0",
+        "model": "mistral:7b-instruct-v0.3-q8_0",
         "enable_memory": True,
         "db_path": "./db/synthesizer_agent"
-    }, teachability=teachability)
+    }, teachability=teachability) # Pass teachability to create_autogen_agent
 
     # Ensure discussion history is retrieved from session state
     discussion_history = st.session_state.get("discussion_history", "")
