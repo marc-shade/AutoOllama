@@ -14,7 +14,8 @@ from skills.summarize_project_status import summarize_project_status
 from ui.discussion import update_discussion_and_whiteboard  # Corrected import
 from ui.utils import extract_keywords  # Import extract_keywords
 from ollama_llm import OllamaLLM # Import OllamaLLM from ollama_llm.py
-from search_workflow import initiate_search_workflow # Import from search_workflow.py
+from skills.web_search import web_search # Import web_search directly
+from agent_creation import create_autogen_agent # Import create_autogen_agent
 
 def process_agent_interaction(agent_index: int) -> None:
     """Handles the interaction with a selected agent."""
@@ -27,9 +28,11 @@ def process_agent_interaction(agent_index: int) -> None:
     if "agents_data" not in st.session_state:
         st.session_state.agents_data = []
 
-    agent = st.session_state.agents_data[agent_index]
+    agent_data = st.session_state.agents_data[agent_index] # Get the agent data
+    # Create an instance of OllamaConversableAgent from the agent_instance dictionary
+    agent_instance = create_autogen_agent(agent_data)
     available_skills = load_skills()  # Load available skills
-    selected_skill = agent.get("skill", [])  # Get the agent's selected skill, default to an empty list
+    selected_skill = agent_data.get("skill", [])  # Get the agent's selected skill from agent_data, default to an empty list
 
     # --- Check if the image generation skill should be triggered ---
     if st.session_state.get("generate_image_trigger", False):
@@ -39,8 +42,8 @@ def process_agent_interaction(agent_index: int) -> None:
         return  # Exit early after image generation
 
     # --- Otherwise, proceed with regular agent interaction or other skills ---
-    agent_name = agent["config"]["name"]
-    description = agent["description"]
+    agent_name = agent_data["config"]["name"] # Access from agent_data
+    description = agent_data["description"] # Access from agent_data
     user_request = st.session_state.get("user_request", "")
     user_input = st.session_state.get("user_input", "")
     rephrased_request = st.session_state.get("rephrased_request", "")
@@ -63,8 +66,10 @@ def process_agent_interaction(agent_index: int) -> None:
                 st.session_state.get("user_request", "") # Use the original user request instead of the formatted discussion history
              )
             query = " ".join(keywords)
-            # Initiate the search workflow, passing the teachability object
-            initiate_search_workflow(query, create_autogen_agent, OllamaGroupChatManager, update_discussion_and_whiteboard, teachability) # Pass teachability
+            # Call the web_search function directly
+            skill_result = web_search(query, st.session_state.discussion_history, st.session_state.agents_data, agent_instance.teachability) # Use agent_instance.teachability
+            response_text = f"Skill '{selected_skill[0]}' result: {skill_result}"
+            update_discussion_and_whiteboard(agent_name, response_text, user_input)
             return
         elif selected_skill[0] == "plot_diagram": # Update query for plot_diagram
             query = '{}' # Pass an empty JSON string as a placeholder
@@ -79,7 +84,7 @@ def process_agent_interaction(agent_index: int) -> None:
     if selected_skill and selected_skill[0] != "generate_sd_images":
         skill_function = available_skills[selected_skill[0]]
         if selected_skill[0] in ["web_search", "fetch_web_content"]:
-            skill_result = skill_function(query=query, discussion_history=st.session_state.discussion_history, teachability=agent.teachability) # Pass teachability to skill_function
+            skill_result = skill_function(query=query, discussion_history=st.session_state.discussion_history, teachability=agent_instance.teachability) # Pass teachability to skill_function
         elif selected_skill[0] == "plot_diagram":
             skill_result = skill_function(query=query, discussion_history=st.session_state.discussion_history) # Pass the query to the skill function
         else:
@@ -116,12 +121,17 @@ def process_agent_interaction(agent_index: int) -> None:
     st.session_state["update_ui"] = False
 
     # --- If no skill is selected, get the agent's response from the LLM ---
-    if agent.get("enable_moa", False):
-        full_response = execute_moa_workflow(request, st.session_state.agents_data, agent)
+    if agent_data.get("enable_moa", False): # Access from agent_data
+        full_response = execute_moa_workflow(request, st.session_state.agents_data, agent_data) # Pass agent_data
         # Update discussion history with MoA response
         update_discussion_and_whiteboard(agent_name, full_response, user_input)
     else:
-        response_generator = send_request_to_ollama_api(agent_name, request, agent=agent)
+        # Check if memory is enabled
+        if agent_data.get("enable_memory", False):
+            # Store the user input in the agent's memory using add_message
+            agent_instance.add_message("User", user_input)  # Call add_message on the agent instance
+
+        response_generator = send_request_to_ollama_api(agent_name, request, agent_data=agent_data) # Pass agent_data
         full_response = ""
         for response_chunk in response_generator:
             if 'done' in response_chunk and response_chunk['done']: # Check if the response is complete
