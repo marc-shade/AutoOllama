@@ -9,6 +9,7 @@ from agent_edit import (
     sanitize_agent_name, assign_skills, select_model
 )
 from ui.discussion import update_discussion_and_whiteboard
+from agent_creation import create_autogen_agent  # Import the function
 
 def reload_agents() -> None:
     """Reloads the agents from the JSON files."""
@@ -23,15 +24,15 @@ def agent_button_callback(agent_index: int):
     def callback() -> None:
         """Handles the agent interaction when the button is clicked."""
         st.session_state["selected_agent_index"] = agent_index
-        agent = st.session_state.agents_data[agent_index]
-        agent_name = agent.get("config", {}).get("name", "")
+        agent_data = st.session_state.agents_data[agent_index] # Get the agent data
+        agent_name = agent_data.get("config", {}).get("name", "")
         st.session_state["form_agent_name"] = agent_name
-        st.session_state["form_agent_description"] = agent.get("description", "")
+        st.session_state["form_agent_description"] = agent_data.get("description", "")
 
         if st.session_state.get("show_edit"):
             return  # Do nothing if the edit panel is open
 
-        selected_skill = agent.get("skill", [])
+        selected_skill = agent_data.get("skill", [])
 
         if selected_skill:
             available_skills = load_skills()
@@ -54,7 +55,10 @@ def agent_button_callback(agent_index: int):
                 else:
                     query = user_input
 
-                teachability = agent.get("teachability", False)
+                # Create agent instance here
+                agent_instance = create_autogen_agent(agent_data)
+                # Access teachability correctly
+                teachability = agent_instance.teachability if hasattr(agent_instance, "teachability") else None
 
                 if selected_skill[0] == "generate_sd_images":
                     skill_result = skill_function(discussion_history=discussion_history)
@@ -119,8 +123,8 @@ def display_agents() -> None:
         st.sidebar.title("Your Agents")
         st.sidebar.subheader("Click to interact")
 
-        for index, agent in enumerate(agents_data):
-            agent_name = agent["config"].get("name", f"Unnamed Agent {index + 1}")
+        for index, agent_data in enumerate(agents_data):
+            agent_name = agent_data["config"].get("name", f"Unnamed Agent {index + 1}") # Correct key: "config"
 
             column1, column2, column3, column4 = st.sidebar.columns([1, 1, 1, 5])
             with column1:
@@ -152,12 +156,12 @@ def display_agents() -> None:
                     </style>
                     """
                     st.markdown(
-                        button_style + f'<button class="custom-button active">{agent.get("emoji", "🐶")} {agent_name}</button>',
+                        button_style + f'<button class="custom-button active">{agent_data.get("emoji", "🐶")} {agent_name}</button>',
                         unsafe_allow_html=True,
                     )
                 else:
                     st.button(
-                        f'{agent.get("emoji", "🐶")} {agent_name}',
+                        f'{agent_data.get("emoji", "🐶")} {agent_name}',
                         key=f"agent_{index}",
                         on_click=agent_button_callback(index),
                     )
