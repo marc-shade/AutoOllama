@@ -59,13 +59,13 @@ def create_agent_data(
     return autogen_agent_data, crewai_agent_data
 
 
-def send_request_to_ollama_api(expert_name: str, request: str, api_key: str = None, stream: bool = True, agent: dict = None, timeout: int = 120): # Add agent parameter, updated timeout to 120
+def send_request_to_ollama_api(expert_name: str, request: str, api_key: str = None, stream: bool = True, agent_data: dict = None, timeout: int = 120):
     """Sends a request to the Ollama API and yields the response."""
     # --- Get agent-specific settings or fall back to global settings ---
-    ollama_url = agent.get("ollama_url") if agent else st.session_state.get("ollama_url", "http://localhost:11434")
-    temperature_value = agent.get("temperature") if agent else st.session_state.get("temperature", 0.1)
+    ollama_url = agent_data.get("ollama_url") if agent_data else st.session_state.get("ollama_url", "http://localhost:11434") # Access from agent_data
+    temperature_value = agent_data.get("temperature") if agent_data else st.session_state.get("temperature", 0.1) # Access from agent_data
     # --- Use agent-specific model if available ---
-    model = agent.get("model") if agent else st.session_state.get("model", "mistral:instruct")
+    model = agent_data.get("model") if agent_data else st.session_state.get("model", "mistral:instruct") # Access from agent_data
 
     url = f"{ollama_url}/api/generate"
     data = {
