@@ -1,8 +1,9 @@
 # TeamForgeAI/file_utils.py
-
 import json
 import os
 import random
+
+from agent_creation import create_autogen_agent # Import from agent_creation.py
 
 def sanitize_text(text: str) -> str:
     """Sanitizes the provided text by removing non-printable characters."""
@@ -59,7 +60,7 @@ def create_agent_data(expert_name: str, description: str, skills: list = None, t
             "human_input_mode": "NEVER",
             "max_consecutive_auto_reply": 8,
             "system_message": f"You are a helpful assistant that can act as {expert_name} who {sanitized_description}.",
-            "db_path": db_path,
+            "db_path": db_path, # Include db_path in agent data
             "enable_memory": enable_memory
         },
         "description": description,  # Use the original description here
@@ -71,7 +72,7 @@ def create_agent_data(expert_name: str, description: str, skills: list = None, t
         "temperature": temperature,
         "model": model,
         "skill": sanitized_skills[0] if sanitized_skills else None,  # Add the first skill to the "skill" field
-        "db_path": db_path,
+        "db_path": db_path, # Include db_path in agent data
         "enable_memory": enable_memory,
         "moa_role": moa_role
     }
@@ -143,7 +144,7 @@ def load_agents_from_json(directory: str) -> list:
             try:
                 with open(filepath, 'r', encoding="utf-8") as file:
                     agent_data = json.load(file)
-                    agents.append(agent_data)
+                    agents.append(agent_data) # Append the agent data
             except Exception as error:
                 print(f"Error loading agent from {filepath}: {error}")
     return agents
