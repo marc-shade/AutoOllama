@@ -159,11 +159,14 @@ def edit_agent_properties(agent: dict, teams: list, agents_base_dir: str) -> Non
         else 0,
         key=f"model_{edit_index}",
     )
-    agent["db_path"] = st.text_input(
-        "Database Path",
-        value=agent.get("db_path", f"./db/{agent['config']['name']}"),
-        key=f"db_path_{edit_index}",
-    )
+
+    # Removed "Database Path" field
+    # agent["db_path"] = st.text_input(
+    #     "Database Path",
+    #     value=agent.get("db_path", f"./db/{agent['config']['name']}"),
+    #     key=f"db_path_{edit_index}",
+    # )
+
     agent["enable_memory"] = st.checkbox(
         "Enable Memory",
         value=agent.get("enable_memory", False),
@@ -292,7 +295,7 @@ def regenerate_agent_description(agent: dict) -> str:
     print(f"regenerate_agent_description called with agent_name: {agent_name}")
     print(f"regenerate_agent_description called with prompt: {prompt}")
 
-    response_generator = send_request_to_ollama_api(agent_name, prompt, agent=agent)
+    response_generator = send_request_to_ollama_api(agent_name, prompt, agent_data=agent)  # Pass agent_data
 
     full_response = ""
     try:
