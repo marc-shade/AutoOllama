@@ -7,7 +7,7 @@ from agent_utils import get_agents_from_text, get_workflow_from_agents, zip_file
 
 def display_user_input() -> str:
     """Displays a text area for user input and extracts URLs."""
-    user_input = st.text_area("Additional Input:", key="user_input", height=100)
+    user_input = st.text_area("Additional User Input:", key="user_input", height=100)
     if user_input:
         url_pattern = re.compile(
             r"http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+"
@@ -25,7 +25,7 @@ def display_user_input() -> str:
 def display_rephrased_request() -> None:
     """Displays the rephrased user request in a text area."""
     st.text_area(
-        "Re-engineered Prompt:",
+        "Re-engineered Prompt for Team:",
         value=st.session_state.get("rephrased_request", ""),
         height=100,
         key="rephrased_request_area",
@@ -35,7 +35,7 @@ def display_rephrased_request() -> None:
 def display_user_request_input() -> None:
     """Displays the user request input field and triggers agent creation."""
     user_request = st.text_input(
-        "Enter your request:",
+        "Initial User Request:",
         key="user_request",
         value=st.session_state.get("user_request", ""),
     )
