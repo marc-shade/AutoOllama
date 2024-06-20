@@ -35,48 +35,45 @@ def display_rephrased_request() -> None:
 
 def display_user_request_input() -> None:
     """Displays the user request input field and triggers agent creation."""
-    # Only disable the input if 'rephrased_request' is already in the session state
-    disabled_input = "rephrased_request" in st.session_state 
-
     user_request = st.text_input(
         "Initial User Request:",
         key="user_request",
-        value=st.session_state.get("user_request", ""),
-        disabled=disabled_input, 
+        value=st.session_state.get("user_request", "")
     )
+    
+    # Process the user request and disable the input field
     if st.session_state.get("previous_user_request") != user_request:
         st.session_state.previous_user_request = user_request
         if user_request:
             try:
-                if not st.session_state.get("rephrased_request"):
-                    handle_begin(st.session_state)
-                else:
-                    autogen_agents, crewai_agents, _ = get_agents_from_text(
-                        st.session_state.rephrased_request
-                    )
-                    print(f"Debug: AutoGen Agents: {autogen_agents}")
-                    print(f"Debug: CrewAI Agents: {crewai_agents}")
-                    if not autogen_agents:
-                        print("Error: No agents created.")
-                        st.warning("Failed to create agents. Please try again.")
-                        return
-                    agents_data = {}
-                    for agent in autogen_agents:
-                        agent_name = agent["config"]["name"]
-                        agents_data[agent_name] = agent
-                    print(f"Debug: Agents data: {agents_data}")
-                    workflow_data, _ = get_workflow_from_agents(autogen_agents)
-                    print(f"Debug: Workflow data: {workflow_data}")
-                    print(f"Debug: CrewAI agents: {crewai_agents}")
-                    (
-                        autogen_zip_buffer,
-                        crewai_zip_buffer,
-                    ) = zip_files_in_memory(agents_data, workflow_data, crewai_agents)
-                    st.session_state.autogen_zip_buffer = autogen_zip_buffer
-                    st.session_state.crewai_zip_buffer = crewai_zip_buffer
-                    st.session_state.agents_data = autogen_agents # Update the session state variable
+                handle_begin(st.session_state)
+                autogen_agents, crewai_agents, _ = get_agents_from_text(
+                    st.session_state.rephrased_request
+                )
+                print(f"Debug: AutoGen Agents: {autogen_agents}")
+                print(f"Debug: CrewAI Agents: {crewai_agents}")
+                if not autogen_agents:
+                    print("Error: No agents created.")
+                    st.warning("Failed to create agents. Please try again.")
+                    return
+                agents_data = {}
+                for agent in autogen_agents:
+                    agent_name = agent["config"]["name"]
+                    agents_data[agent_name] = agent
+                print(f"Debug: Agents data: {agents_data}")
+                workflow_data, _ = get_workflow_from_agents(autogen_agents)
+                print(f"Debug: Workflow data: {workflow_data}")
+                print(f"Debug: CrewAI agents: {crewai_agents}")
+                (
+                    autogen_zip_buffer,
+                    crewai_zip_buffer,
+                ) = zip_files_in_memory(agents_data, workflow_data, crewai_agents)
+                st.session_state.autogen_zip_buffer = autogen_zip_buffer
+                st.session_state.crewai_zip_buffer = crewai_zip_buffer
+                st.session_state.agents_data = autogen_agents # Update the session state variable
             except Exception as e:
                 print(f"Error in display_user_request_input: {e}")
+    
     # Trigger a re-run of the Streamlit app outside the conditional block
     if st.session_state.get("trigger_rerun"):
         st.session_state["trigger_rerun"] = False
