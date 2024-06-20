@@ -221,6 +221,9 @@ def edit_agent_properties(agent: dict, teams: list, agents_base_dir: str) -> Non
         st.session_state["trigger_rerun"] = True
         st.session_state[f"save_clicked_{edit_index}"] = False
 
+        # Mark the agent as saved
+        agent["saved"] = True
+
     # Find the index of the current team in the teams list
     current_team_index = teams.index(st.session_state.get("current_team", "agents"))
     move_to_team = st.selectbox(
