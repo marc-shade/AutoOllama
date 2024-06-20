@@ -204,7 +204,7 @@ def model_comparison_test():
         df = pd.DataFrame({"Model": models, "Time (seconds)": times})
 
         # Plot the results using st.bar_chart
-        st.bar_chart(df, x="Model", y="Time (seconds)")
+        st.bar_chart(df, x="Model", y="Time (seconds)", color="#4CAF50")
         
         for model, (result, elapsed_time) in results.items():
             st.subheader(f"Results for {model} (Time taken: {elapsed_time:.2f} seconds):")
@@ -240,7 +240,7 @@ def contextual_response_test():
         df = pd.DataFrame(data)
 
         # Plot the results using st.bar_chart
-        st.bar_chart(df, x="Prompt", y="Time (seconds)")
+        st.bar_chart(df, x="Prompt", y="Time (seconds)", color="#4CAF50")
 
         st.write("JSON Handling Capability: ", "✅" if check_json_handling(selected_model, temperature, max_tokens, presence_penalty, frequency_penalty) else "❌")
         st.write("Function Calling Capability: ", "✅" if check_function_calling(selected_model, temperature, max_tokens, presence_penalty, frequency_penalty) else "❌")
@@ -266,7 +266,7 @@ def feature_test():
         df = pd.DataFrame(data)
 
         # Plot the results using st.bar_chart
-        st.bar_chart(df, x="Feature", y="Result")
+        st.bar_chart(df, x="Feature", y="Result", color="#4CAF50")
 
 def vision_comparison_test():
     st.header("Vision Model Comparison")
@@ -319,7 +319,7 @@ def vision_comparison_test():
         df = pd.DataFrame({"Model": models, "Time (seconds)": times})
 
         # Plot the results
-        st.bar_chart(df, x="Model", y="Time (seconds)")
+        st.bar_chart(df, x="Model", y="Time (seconds)", color="#4CAF50")
 
 def list_models():
     st.header("List Local Models")
