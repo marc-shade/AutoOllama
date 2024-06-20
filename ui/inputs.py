@@ -1,5 +1,3 @@
---- START OF FILE inputs.py ---
-
 # TeamForgeAI/ui/inputs.py
 import re
 from ui.utils import handle_begin # Corrected import
