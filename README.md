@@ -62,6 +62,23 @@ Start the application:
 streamlit run TeamForgeAI/main.py
 ```
 
+## Updates
+
+You may also need to rerun the requirements.txt if there are new libraries. 
+
+The most recent update requires the 'ollama' Python library, which you may have to install manually. I'm having an issue getting it installed via the requirements.txt file.
+
+https://github.com/ollama/ollama-python
+
+```
+pip install -U -r requirements.txt
+```
+or if you need to do it manually, you can just do:
+```
+pip install ollama
+```
+
+
 ## Usage
 
 <img src="https://2acrestudios.com/wp-content/uploads/2024/05/grid-0006.png" align="right" style="width: 300px;" />
