@@ -154,21 +154,8 @@ if st.session_state.current_app == "TeamForgeAI":
         # Load agents from files
         load_agents_from_files()
         
-        column1, column2 = st.columns([3, 2])
+        column1, column2 = st.columns([2, 3])  # Swapped the column widths to move office to the right
         with column1:
-            # Load a random background image with a unique cache key
-            selected_background = load_background_images("TeamForgeAI/files/backgrounds", cache_key=random.random())
-
-            # Display the virtual office with the selected background
-            st.markdown('<div class="virtual-office-column">', unsafe_allow_html=True)
-            if selected_background:
-                with open(selected_background, "rb") as file:
-                    image_data = file.read()
-                    background_image_b64 = base64.b64encode(image_data).decode("utf-8")
-                display_virtual_office(background_image_b64)
-            st.markdown('</div>', unsafe_allow_html=True)
-
-        with column2:
             display_user_request_input()
             display_rephrased_request()
             display_user_input()
@@ -181,7 +168,19 @@ if st.session_state.current_app == "TeamForgeAI":
                     initiate_auto_mode() # Start Auto Mode when button is clicked
                 else:
                     st.info("Auto Mode is OFF. You can interact with agents individually.")
-                    terminate_auto_mode() # Stop Auto Mode when button is clicked again
+
+        with column2:
+            # Load a random background image with a unique cache key
+            selected_background = load_background_images("TeamForgeAI/files/backgrounds", cache_key=random.random())
+
+            # Display the virtual office with the selected background
+            st.markdown('<div class="virtual-office-column">', unsafe_allow_html=True)
+            if selected_background:
+                with open(selected_background, "rb") as file:
+                    image_data = file.read()
+                    background_image_b64 = base64.b64encode(image_data).decode("utf-8")
+                display_virtual_office(background_image_b64)
+            st.markdown('</div>', unsafe_allow_html=True)
 
         with st.sidebar:
             st.markdown(
