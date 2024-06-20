@@ -138,6 +138,9 @@ def display_agents() -> None:
                     pass
 
             with column4:
+                # Check if the agent is saved (has a 'saved' key in its data)
+                is_agent_saved = agent_data.get("saved", False)
+
                 if "next_agent" in st.session_state and st.session_state.next_agent == agent_name:
                     button_style = """
                     <style>
@@ -153,17 +156,25 @@ def display_agents() -> None:
                         background-color: green;
                         color: white.
                     }
+                    .custom-button.disabled {
+                        background-color: #cccccc;
+                        color: #666666;
+                        cursor: not-allowed;
+                    }
                     </style>
                     """
+                    button_class = "custom-button active" if is_agent_saved else "custom-button disabled"
                     st.markdown(
-                        button_style + f'<button class="custom-button active">{agent_data.get("emoji", "🐶")} {agent_name}</button>',
+                        button_style + f'<button class="{button_class}">{agent_data.get("emoji", "🐶")} {agent_name}</button>',
                         unsafe_allow_html=True,
                     )
                 else:
+                    # Use a regular button with the disabled attribute if the agent is not saved
                     st.button(
                         f'{agent_data.get("emoji", "🐶")} {agent_name}',
                         key=f"agent_{index}",
                         on_click=agent_button_callback(index),
+                        disabled=not is_agent_saved, # Disable the button if not saved
                     )
 
     handle_agent_editing(teams, agents_base_dir)
@@ -185,12 +196,9 @@ def display_agents() -> None:
             "ollama_url": "http://localhost:11434",
             "temperature": 0.20,
             "model": new_agent_model,
+            "saved": False, # Initially mark the agent as not saved
         }
         st.session_state.agents_data.append(new_agent)
-        save_agent_to_json(
-            new_agent,
-            os.path.join(agents_base_dir, st.session_state["current_team"], f"{new_agent['config']['name']}.json"),
-        )
         st.session_state["trigger_rerun"] = True
 
     st.sidebar.title("Team Management")
