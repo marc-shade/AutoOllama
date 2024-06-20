@@ -5,6 +5,18 @@ import pandas as pd
 from datetime import datetime
 import json
 import time
+import matplotlib.pyplot as plt
+from PIL import Image
+import io
+import base64
+import ollama  # Import the ollama library
+import os
+
+# Set plot style based on Streamlit theme
+if st.get_option("theme.base") == "light":
+    plt.style.use('default')  # Use default white background for light mode
+else:
+    plt.style.use('dark_background')  # Use dark background for dark mode
 
 OLLAMA_URL = "http://localhost:11434/api"
 
@@ -18,7 +30,7 @@ def get_available_models():
     ]
     return models
 
-def call_ollama(model, prompt=None, image=None, temperature=0.5, max_tokens=150, presence_penalty=0.0, frequency_penalty=0.0, context=None):
+def call_ollama_endpoint(model, prompt=None, image=None, temperature=0.5, max_tokens=150, presence_penalty=0.0, frequency_penalty=0.0, context=None):
     payload = {
         "model": model,
         "temperature": temperature,
@@ -30,7 +42,15 @@ def call_ollama(model, prompt=None, image=None, temperature=0.5, max_tokens=150,
     if prompt:
         payload["prompt"] = prompt
     if image:
-        files = {"image": image}
+        # Read image data into BytesIO
+        image_bytesio = io.BytesIO(image.read())
+
+        # Determine image format and filename
+        image_format = "image/jpeg" if image.type == "image/jpeg" else "image/png"
+        filename = "image.jpg" if image.type == "image/jpeg" else "image.png"
+
+        # Send image data using multipart/form-data
+        files = {"file": (filename, image_bytesio, image_format)}
         response = requests.post(f"{OLLAMA_URL}/generate", data=payload, files=files, stream=True)
     else:
         response = requests.post(f"{OLLAMA_URL}/generate", json=payload, stream=True)
@@ -50,18 +70,23 @@ def performance_test(models, prompt, temperature=0.5, max_tokens=150, presence_p
     results = {}
     for model in models:
         start_time = time.time()
-        result, _ = call_ollama(model, prompt, temperature=temperature, max_tokens=max_tokens, presence_penalty=presence_penalty, frequency_penalty=frequency_penalty, context=context)
+        result, _ = call_ollama_endpoint(model, prompt, temperature=temperature, max_tokens=max_tokens, presence_penalty=presence_penalty, frequency_penalty=frequency_penalty, context=context)
         end_time = time.time()
         elapsed_time = end_time - start_time
         results[model] = (result, elapsed_time)
         time.sleep(0.1)
     return results
 
-def vision_test(models, image, temperature=0.5, max_tokens=150, presence_penalty=0.0, frequency_penalty=0.0, context=None):
+def vision_test(models, image_file, temperature=0.5, max_tokens=150, presence_penalty=0.0, frequency_penalty=0.0, context=None):
     results = {}
     for model in models:
         start_time = time.time()
-        result, _ = call_ollama(model, image=image, temperature=temperature, max_tokens=max_tokens, presence_penalty=presence_penalty, frequency_penalty=frequency_penalty, context=context)
+        try:
+            # Pass the original image_file object to call_ollama_endpoint
+            result, _ = call_ollama_endpoint(model, image=image_file, temperature=temperature, max_tokens=max_tokens, presence_penalty=presence_penalty, frequency_penalty=frequency_penalty, context=context)
+            print(f"Model: {model}, Result: {result}")  # Debug statement
+        except Exception as e:
+            result = f"An error occurred: {str(e)}"
         end_time = time.time()
         elapsed_time = end_time - start_time
         results[model] = (result, elapsed_time)
@@ -70,7 +95,7 @@ def vision_test(models, image, temperature=0.5, max_tokens=150, presence_penalty
 
 def check_json_handling(model, temperature, max_tokens, presence_penalty, frequency_penalty):
     prompt = "Return the following data in JSON format: name: John, age: 30, city: New York"
-    result, _ = call_ollama(model, prompt=prompt, temperature=temperature, max_tokens=max_tokens, presence_penalty=presence_penalty, frequency_penalty=frequency_penalty)
+    result, _ = call_ollama_endpoint(model, prompt=prompt, temperature=temperature, max_tokens=max_tokens, presence_penalty=presence_penalty, frequency_penalty=frequency_penalty)
     try:
         json.loads(result)
         return True
@@ -79,7 +104,7 @@ def check_json_handling(model, temperature, max_tokens, presence_penalty, freque
 
 def check_function_calling(model, temperature, max_tokens, presence_penalty, frequency_penalty):
     prompt = "Define a function named 'add' that takes two numbers and returns their sum. Then call the function with arguments 5 and 3."
-    result, _ = call_ollama(model, prompt=prompt, temperature=temperature, max_tokens=max_tokens, presence_penalty=presence_penalty, frequency_penalty=frequency_penalty)
+    result, _ = call_ollama_endpoint(model, prompt=prompt, temperature=temperature, max_tokens=max_tokens, presence_penalty=presence_penalty, frequency_penalty=frequency_penalty)
     return "8" in result
 
 def list_local_models():
@@ -171,6 +196,16 @@ def model_comparison_test():
 
     if st.button("Compare Models", key="compare_models"):
         results = performance_test(selected_models, prompt, temperature, max_tokens, presence_penalty, frequency_penalty)
+        
+        # Prepare data for visualization
+        models = list(results.keys())  # Get models from results
+        times = [results[model][1] for model in models]
+
+        df = pd.DataFrame({"Model": models, "Time (seconds)": times})
+
+        # Plot the results using st.bar_chart
+        st.bar_chart(df, x="Model", y="Time (seconds)")
+        
         for model, (result, elapsed_time) in results.items():
             st.subheader(f"Results for {model} (Time taken: {elapsed_time:.2f} seconds):")
             st.write(result)
@@ -190,13 +225,23 @@ def contextual_response_test():
     if st.button("Start Contextual Test", key="start_contextual_test"):
         prompt_list = [p.strip() for p in prompts.split("\n")]
         context = []
-        for prompt in prompt_list:
+        times = []
+        for i, prompt in enumerate(prompt_list):
             start_time = time.time()
-            result, context = call_ollama(selected_model, prompt=prompt, temperature=temperature, max_tokens=max_tokens, presence_penalty=presence_penalty, frequency_penalty=frequency_penalty, context=context)
+            result, context = call_ollama_endpoint(selected_model, prompt=prompt, temperature=temperature, max_tokens=max_tokens, presence_penalty=presence_penalty, frequency_penalty=frequency_penalty, context=context)
             end_time = time.time()
             elapsed_time = end_time - start_time
-            st.subheader(f"Prompt: {prompt} (Time taken: {elapsed_time:.2f} seconds)")
+            times.append(elapsed_time)
+            st.subheader(f"Prompt {i+1}: {prompt} (Time taken: {elapsed_time:.2f} seconds)")
             st.write(f"Response: {result}")
+
+        # Prepare data for visualization
+        data = {"Prompt": prompt_list, "Time (seconds)": times}
+        df = pd.DataFrame(data)
+
+        # Plot the results using st.bar_chart
+        st.bar_chart(df, x="Prompt", y="Time (seconds)")
+
         st.write("JSON Handling Capability: ", "✅" if check_json_handling(selected_model, temperature, max_tokens, presence_penalty, frequency_penalty) else "❌")
         st.write("Function Calling Capability: ", "✅" if check_function_calling(selected_model, temperature, max_tokens, presence_penalty, frequency_penalty) else "❌")
 
@@ -216,21 +261,65 @@ def feature_test():
         st.markdown(f"### JSON Handling Capability: {'✅ Success!' if json_result else '❌ Failure!'}")
         st.markdown(f"### Function Calling Capability: {'✅ Success!' if function_result else '❌ Failure!'}")
 
+        # Prepare data for visualization
+        data = {"Feature": ['JSON Handling', 'Function Calling'], "Result": [json_result, function_result]}
+        df = pd.DataFrame(data)
+
+        # Plot the results using st.bar_chart
+        st.bar_chart(df, x="Feature", y="Result")
+
 def vision_comparison_test():
     st.header("Vision Model Comparison")
     available_models = get_available_models()
-    selected_models = st.multiselect("Select the models you want to compare:", available_models)
+    # Ensure 'llava' is in available models before setting it as default
+    default_models = ['llava'] if 'llava' in available_models else []
+    selected_models = st.multiselect("Select the models you want to compare:", available_models, default=default_models)
     temperature = st.slider("Select the temperature:", min_value=0.0, max_value=1.0, value=0.5)
     max_tokens = st.number_input("Max tokens:", value=150)
     presence_penalty = st.number_input("Presence penalty:", value=0.0)
     frequency_penalty = st.number_input("Frequency penalty:", value=0.0)
-    uploaded_file = st.file_uploader("Choose an image...", type="jpg")
+    uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "png"])
 
     if st.button("Compare Vision Models", key="compare_vision_models") and uploaded_file is not None:
-        results = vision_test(selected_models, uploaded_file, temperature, max_tokens, presence_penalty, frequency_penalty)
+        # Display the uploaded image
+        st.image(uploaded_file, caption="Uploaded Image", use_column_width=True)
+
+        results = {}
+        for model in selected_models:
+            start_time = time.time()
+            try:
+                # Use ollama.chat for vision tests
+                response = ollama.chat(
+                    model=model,
+                    messages=[
+                        {
+                            'role': 'user',
+                            'content': 'Describe this image:',
+                            'images': [uploaded_file]
+                        }
+                    ]
+                )
+                result = response['message']['content']
+                print(f"Model: {model}, Result: {result}")  # Debug statement
+            except Exception as e:
+                result = f"An error occurred: {str(e)}"
+            end_time = time.time()
+            elapsed_time = end_time - start_time
+            results[model] = (result, elapsed_time)
+            time.sleep(0.1)
+
+        # Display the LLM response text and time taken
         for model, (result, elapsed_time) in results.items():
             st.subheader(f"Results for {model} (Time taken: {elapsed_time:.2f} seconds):")
             st.write(result)
+
+        # Prepare data for visualization (after displaying responses)
+        models = list(results.keys())
+        times = [results[model][1] for model in models]
+        df = pd.DataFrame({"Model": models, "Time (seconds)": times})
+
+        # Plot the results
+        st.bar_chart(df, x="Model", y="Time (seconds)")
 
 def list_models():
     st.header("List Local Models")
@@ -290,9 +379,101 @@ def remove_model_ui():
             st.write(result["message"])
             # Update the list of available models
             st.session_state.available_models = get_available_models()
-            st.experimental_rerun()
+            st.rerun()
         else:
             st.error("Please select a model.")
+
+def save_chat_history(chat_history, filename="chat_history.json"):
+    with open(filename, "w") as f:
+        json.dump(chat_history, f)
+
+def load_chat_history(filename):
+    with open(filename, "r") as f:
+        return json.load(f)
+
+def chat_interface():
+    st.header("Chat with a Model")
+    available_models = get_available_models()
+    if "chat_history" not in st.session_state:
+        st.session_state.chat_history = []
+    if "selected_model" not in st.session_state:
+        st.session_state.selected_model = available_models[0] if available_models else None
+
+    selected_model = st.selectbox("Select a model:", available_models, key="selected_model")
+    temperature = st.slider("Temperature:", min_value=0.0, max_value=1.0, value=0.5)
+    max_tokens = st.number_input("Max Tokens:", value=150)
+    presence_penalty = st.number_input("Presence Penalty:", value=0.0)
+    frequency_penalty = st.number_input("Frequency Penalty:", value=0.0)
+
+    # Save chat history
+    if st.button("Save Chat"):
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        default_filename = f"chat_history_{timestamp}.json"
+        chat_name = st.text_input("Enter a name for the chat:", value=default_filename)
+        if chat_name:
+            save_chat_history(st.session_state.chat_history, chat_name)
+            st.success(f"Chat history saved to {chat_name}")
+
+    # Load/Rename/Delete chat history
+    st.sidebar.subheader("Saved Chats")
+    saved_chats = [f for f in os.listdir() if f.endswith(".json")]
+
+    # State variable to track which chat is being renamed
+    if "rename_chat" not in st.session_state:
+        st.session_state.rename_chat = None
+
+    for chat in saved_chats:
+        col1, col2, col3 = st.sidebar.columns([3, 1, 1])
+        with col1:
+            # Display chat name without .json extension
+            chat_name = os.path.splitext(chat)[0] 
+            if st.button(chat_name):
+                st.session_state.chat_history = load_chat_history(chat)
+                st.rerun()
+        with col2:
+            if st.button("✏️", key=f"rename_{chat}"):
+                st.session_state.rename_chat = chat  # Set chat to be renamed
+                st.rerun()
+        with col3:
+            if st.button("🗑️", key=f"delete_{chat}"):
+                os.remove(chat)
+                st.success(f"Chat {chat} deleted.")
+                st.rerun()
+
+    # Text input for renaming (outside the loop)
+    if st.session_state.rename_chat:
+        # Display current name without .json extension
+        current_name = os.path.splitext(st.session_state.rename_chat)[0]
+        new_name = st.text_input("Rename chat:", value=current_name)
+        if new_name:
+            # Add .json extension to the new name
+            new_name = new_name + ".json" 
+            if new_name != st.session_state.rename_chat:
+                os.rename(st.session_state.rename_chat, new_name)
+                st.success(f"Chat renamed to {new_name}")
+                st.session_state.rename_chat = None  # Reset rename_chat
+                st.cache_resource.clear()
+                st.rerun()
+
+    # Display chat history
+    for message in st.session_state.chat_history:
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
+
+    # Get user input
+    if prompt := st.chat_input("What is up my person?"):
+        st.session_state.chat_history.append({"role": "user", "content": prompt})
+        with st.chat_message("user"):
+            st.markdown(prompt)
+
+        # Generate response using ollama library
+        with st.chat_message("assistant"):
+            response_placeholder = st.empty()
+            full_response = ""
+            for response_chunk in ollama.generate(selected_model, prompt, stream=True):
+                full_response += response_chunk["response"]
+                response_placeholder.markdown(full_response)
+            st.session_state.chat_history.append({"role": "assistant", "content": full_response})
 
 def main():
     if 'selected_test' not in st.session_state:
@@ -305,25 +486,35 @@ def main():
             "</div>",
             unsafe_allow_html=True,
         )
-        st.subheader("Maintain")
-        if st.button("List Local Models", key="button_list_models"):
-            st.session_state.selected_test = "List Local Models"
-        if st.button("Show Model Information", key="button_show_model_info"):
-            st.session_state.selected_test = "Show Model Information"
-        if st.button("Pull a Model", key="button_pull_model"):
-            st.session_state.selected_test = "Pull a Model"
-        if st.button("Remove a Model", key="button_remove_model"):
-            st.session_state.selected_test = "Remove a Model"
-        
-        st.subheader("Test")
-        if st.button("Model Feature Test", key="button_feature_test"):
-            st.session_state.selected_test = "Model Feature Test"
-        if st.button("Model Comparison by Response Quality", key="button_model_comparison"):
-            st.session_state.selected_test = "Model Comparison by Response Quality"
-        if st.button("Contextual Response Test by Model", key="button_contextual_response"):
-            st.session_state.selected_test = "Contextual Response Test by Model"
-        if st.button("Vision Model Comparison", key="button_vision_model_comparison"):
-            st.session_state.selected_test = "Vision Model Comparison"
+
+        st.subheader("Chat") # Chat Section
+        st.markdown('<style>div.row-widget.stButton > button {width:100%;}</style>', unsafe_allow_html=True)
+        if st.button("Chat", key="button_chat"):
+            st.session_state.selected_test = "Chat"
+
+        # Maintain Section (Collapsible)
+        with st.expander("Maintain", expanded=False):
+            st.markdown('<style>div.row-widget.stButton > button {width:100%;}</style>', unsafe_allow_html=True)
+            if st.button("List Local Models", key="button_list_models"):
+                st.session_state.selected_test = "List Local Models"
+            if st.button("Show Model Information", key="button_show_model_info"):
+                st.session_state.selected_test = "Show Model Information"
+            if st.button("Pull a Model", key="button_pull_model"):
+                st.session_state.selected_test = "Pull a Model"
+            if st.button("Remove a Model", key="button_remove_model"):
+                st.session_state.selected_test = "Remove a Model"
+
+        # Test Section (Collapsible)
+        with st.expander("Test", expanded=False):
+            st.markdown('<style>div.row-widget.stButton > button {width:100%;}</style>', unsafe_allow_html=True)
+            if st.button("Model Feature Test", key="button_feature_test"):
+                st.session_state.selected_test = "Model Feature Test"
+            if st.button("Model Comparison by Response Quality", key="button_model_comparison"):
+                st.session_state.selected_test = "Model Comparison by Response Quality"
+            if st.button("Contextual Response Test by Model", key="button_contextual_response"):
+                st.session_state.selected_test = "Contextual Response Test by Model"
+            if st.button("Vision Model Comparison", key="button_vision_model_comparison"):
+                st.session_state.selected_test = "Vision Model Comparison"
 
     if st.session_state.selected_test == "Model Comparison by Response Quality":
         model_comparison_test()
@@ -341,6 +532,8 @@ def main():
         remove_model_ui()
     elif st.session_state.selected_test == "Vision Model Comparison":
         vision_comparison_test()
+    elif st.session_state.selected_test == "Chat":
+        chat_interface()
     else:
         st.write("""
             ### Welcome to the Ollama Workbench!
@@ -357,6 +550,7 @@ def main():
             - **Model Comparison by Response Quality**: Compare the response quality of multiple models for a given prompt.
             - **Contextual Response Test by Model**: Test how well a model maintains context across multiple prompts.
             - **Vision Model Comparison**: Compare the performance of vision models using the same test image.
+            - **Chat**: Engage in a real-time chat with a selected model.
         """)
 
 if __name__ == "__main__":
