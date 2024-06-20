@@ -1,3 +1,5 @@
+--- START OF FILE inputs.py ---
+
 # TeamForgeAI/ui/inputs.py
 import re
 from ui.utils import handle_begin # Corrected import
@@ -35,11 +37,14 @@ def display_rephrased_request() -> None:
 
 def display_user_request_input() -> None:
     """Displays the user request input field and triggers agent creation."""
+    # Only disable the input if 'rephrased_request' is already in the session state
+    disabled_input = "rephrased_request" in st.session_state 
+
     user_request = st.text_input(
         "Initial User Request:",
         key="user_request",
         value=st.session_state.get("user_request", ""),
-        disabled=True, # Disable the text input
+        disabled=disabled_input, 
     )
     if st.session_state.get("previous_user_request") != user_request:
         st.session_state.previous_user_request = user_request
