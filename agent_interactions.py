@@ -122,9 +122,7 @@ def process_agent_interaction(agent_index: int) -> None:
 
     # --- If no skill is selected, get the agent's response from the LLM ---
     if agent_data.get("enable_moa", False): # Access from agent_data
-        full_response = execute_moa_workflow(request, st.session_state.agents_data, agent_data) # Pass agent_data
-        # Update discussion history with MoA response
-        update_discussion_and_whiteboard(agent_name, full_response, user_input)
+        full_response = execute_moa_workflow(request, st.session_state.agents_data, agent_data, agent_instance) # Pass agent_data and agent_instance
     else:
         # Check if memory is enabled
         if agent_data.get("enable_memory", False):
@@ -141,22 +139,18 @@ def process_agent_interaction(agent_index: int) -> None:
                 # --- Enforce image request format before updating discussion history ---
                 full_response = enforce_image_request_format(full_response)
 
-                # --- Update the discussion history AFTER the response is complete ---
-                update_discussion_and_whiteboard(agent_name, full_response, user_input)
-                st.session_state["accumulated_response"] = full_response
-                st.session_state["trigger_rerun"] = True # Set the flag to trigger a rerun
                 break # Exit the loop since the response is complete
             response_text = response_chunk.get("response", "")
             full_response += response_text
-            st.session_state["accumulated_response"] = full_response
-            st.session_state["trigger_rerun"] = True # Set the flag to trigger a rerun
 
-    # --- Removed duplicate call to update_discussion_and_whiteboard ---
+    # Update discussion history AFTER the response is complete
+    update_discussion_and_whiteboard(agent_name, full_response, user_input)
+    st.session_state["accumulated_response"] = full_response
+    st.session_state["trigger_rerun"] = True # Set the flag to trigger a rerun
 
     st.session_state["form_agent_name"] = agent_name
     st.session_state["form_agent_description"] = description
     st.session_state["selected_agent_index"] = agent_index
-    # --- Removed st.rerun() from here ---
 
     # --- Update checklists after agent interaction ---   
     if "current_project" in st.session_state:
@@ -207,8 +201,11 @@ def enforce_image_request_format(text: str) -> str:
         text = text.replace(f"Visual: {image_request}", f"![Image Request]({image_request})")
     return text
 
-def execute_moa_workflow(request: str, agents_data: list, current_agent: dict) -> str:
+def execute_moa_workflow(request: str, agents_data: list, current_agent: dict, agent_instance) -> str:
     """Executes the Mixture-of-Agents workflow."""
+    # Get the full discussion history
+    discussion_history = st.session_state.get("discussion_history", "")
+
     # Separate proposers and aggregators
     proposers = [agent for agent in agents_data if agent.get("moa_role") == "proposer"]
     aggregators = [agent for agent in agents_data if agent.get("moa_role") == "aggregator"]
@@ -216,43 +213,47 @@ def execute_moa_workflow(request: str, agents_data: list, current_agent: dict) -
     # Layer 1: Proposers generate initial responses
     layer_1_outputs = []
     for proposer in proposers:
-        ollama_llm = OllamaLLM(
-            base_url=proposer["ollama_url"],
-            model=proposer["model"],
-            temperature=proposer["temperature"]
-        )
-        response = ollama_llm.generate_text(request)
+        print(f"🔵 Proposer: {proposer['config']['name']}") # Log the proposer's name
+        # Create an instance of OllamaConversableAgent from the agent_instance dictionary
+        proposer_instance = create_autogen_agent(proposer)
+
+        # Include discussion history and user request in the prompt
+        proposer_prompt = f"""{discussion_history}\n{request}"""
+
+        # Check if memory is enabled for the proposer
+        if proposer.get("enable_memory", False):
+            # Store the user input in the agent's memory using add_message
+            proposer_instance.add_message("User", request)  # Call add_message on the agent instance
+
+        response = proposer_instance.ollama_llm.generate_text(proposer_prompt)
         layer_1_outputs.append(response)
+        print(f"    Proposed Response: {response}") # Log the proposed response
 
     # Subsequent layers: Aggregators refine responses
     current_responses = layer_1_outputs
     for i in range(2, 4):  # Adjust the number of layers as needed
         new_responses = []
         for aggregator in aggregators:
-            ollama_llm = OllamaLLM(
-                base_url=aggregator["ollama_url"],
-                model=aggregator["model"],
-                temperature=aggregator["temperature"]
-            )
-            aggregate_prompt = f"""You have been provided with a set of responses from various open-source models to the latest user query. Your task is to synthesize these responses into a single, high-quality response. It is crucial to critically evaluate the information provided in these responses, recognizing that some of it may be biased or incorrect. Your response should not simply replicate the given answers but should offer a refined, accurate, and comprehensive reply to the instruction. Ensure your response is well-structured, coherent, and adheres to the highest standards of accuracy and reliability.
+            print(f"🔴 Aggregator (Layer {i}): {aggregator['config']['name']}") # Log the aggregator's name and layer
+            # Create an instance of OllamaConversableAgent from the agent_instance dictionary
+            aggregator_instance = create_autogen_agent(aggregator)
 
-            Responses from models:
-            {chr(10).join([f'{j+1}. {response}' for j, response in enumerate(current_responses)])}
-            """
-            response = ollama_llm.generate_text(aggregate_prompt)
+            # Include discussion history and user request in the prompt
+            aggregator_prompt = f"""{discussion_history}\n{request}\n\nResponses from models:\n{chr(10).join([f'{j+1}. {response}' for j, response in enumerate(current_responses)])}"""
+
+            # Check if memory is enabled for the aggregator
+            if aggregator.get("enable_memory", False):
+                # Store the user input in the agent's memory using add_message
+                aggregator_instance.add_message("User", aggregator_prompt)  # Call add_message on the agent instance
+
+            response = aggregator_instance.ollama_llm.generate_text(aggregator_prompt)
             new_responses.append(response)
+            print(f"    Aggregated Response (Layer {i}): {response}") # Log the aggregated response
         current_responses = new_responses
 
     # Final output: Use the current agent as the final aggregator
-    ollama_llm = OllamaLLM(
-        base_url=current_agent["ollama_url"],
-        model=current_agent["model"],
-        temperature=current_agent["temperature"]
-    )
-    aggregate_prompt = f"""You have been provided with a set of responses from various open-source models to the latest user query. Your task is to synthesize these responses into a single, high-quality response. It is crucial to critically evaluate the information provided in these responses, recognizing that some of it may be biased or incorrect. Your response should not simply replicate the given answers but should offer a refined, accurate, and comprehensive reply to the instruction. Ensure your response is well-structured, coherent, and adheres to the highest standards of accuracy and reliability.
-
-    Responses from models:
-    {chr(10).join([f'{j+1}. {response}' for j, response in enumerate(current_responses)])}
-    """
-    moa_response = ollama_llm.generate_text(aggregate_prompt)
+    print(f"🔴 Final Aggregator: {current_agent['config']['name']}") # Log the final aggregator's name
+    aggregate_prompt = f"""{discussion_history}\n{request}\n\nResponses from models:\n{chr(10).join([f'{j+1}. {response}' for j, response in enumerate(current_responses)])}"""
+    moa_response = agent_instance.ollama_llm.generate_text(aggregate_prompt)
+    print(f"    Final MoA Response: {moa_response}") # Log the final MoA response
     return moa_response
