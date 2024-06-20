@@ -29,6 +29,7 @@ def display_rephrased_request() -> None:
         value=st.session_state.get("rephrased_request", ""),
         height=100,
         key="rephrased_request_area",
+        disabled=True, # Disable the text area
     )
 
 
@@ -38,6 +39,7 @@ def display_user_request_input() -> None:
         "Initial User Request:",
         key="user_request",
         value=st.session_state.get("user_request", ""),
+        disabled=True, # Disable the text input
     )
     if st.session_state.get("previous_user_request") != user_request:
         st.session_state.previous_user_request = user_request
