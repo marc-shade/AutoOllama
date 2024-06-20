@@ -20,7 +20,27 @@ if "current_app" not in st.session_state:
 
 # Sidebar for navigation
 with st.sidebar:
-    # Use columns for button layout
+    # Use st.markdown for button styling
+    st.markdown("""
+    <style>
+    div.stButton > button {
+        width: 100%;
+        background-color: transparent;
+    }
+    /* Style the active button to be orange */
+    div.stButton > button:focus
+    {
+        background-color: orange!important;
+        color: white!important;
+    }
+    div.stButton > button:hover
+    {
+        background-color: transparent!important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+    # Create two columns for the buttons
     col1, col2 = st.columns(2)
 
     # TeamForgeAI button
@@ -153,6 +173,15 @@ if st.session_state.current_app == "TeamForgeAI":
 
         # Load agents from files
         load_agents_from_files()
+
+        # Apply CSS for 100% width buttons in the sidebar
+        st.sidebar.markdown("""
+        <style>
+        div.stButton > button {
+            width: 100%;
+        }
+        </style>
+        """, unsafe_allow_html=True)
         
         column1, column2 = st.columns([2, 3])  # Swapped the column widths to move office to the right
         with column1:
