@@ -43,6 +43,7 @@ def process_agent_interaction(agent_index: int) -> None:
 
     # --- Otherwise, proceed with regular agent interaction or other skills ---
     agent_name = agent_data["config"]["name"] # Access from agent_data
+    agent_emoji = agent_data.get("emoji", "") # Get the agent's emoji
     description = agent_data["description"] # Access from agent_data
     user_request = st.session_state.get("user_request", "")
     user_input = st.session_state.get("user_input", "")
@@ -144,7 +145,7 @@ def process_agent_interaction(agent_index: int) -> None:
             full_response += response_text
 
     # Update discussion history AFTER the response is complete
-    update_discussion_and_whiteboard(agent_name, full_response, user_input)
+    update_discussion_and_whiteboard(f"{agent_emoji} {agent_name}", full_response, user_input) # Add emoji to agent name
     st.session_state["accumulated_response"] = full_response
     st.session_state["trigger_rerun"] = True # Set the flag to trigger a rerun
 
@@ -213,7 +214,8 @@ def execute_moa_workflow(request: str, agents_data: list, current_agent: dict, a
     # Layer 1: Proposers generate initial responses
     layer_1_outputs = []
     for proposer in proposers:
-        print(f"🔵 Proposer: {proposer['config']['name']}") # Log the proposer's name
+        proposer_emoji = proposer.get("emoji", "") # Get the proposer's emoji
+        print(f"🟢 Proposer: {proposer_emoji} {proposer['config']['name']}") # Log the proposer's name with emoji
         # Create an instance of OllamaConversableAgent from the agent_instance dictionary
         proposer_instance = create_autogen_agent(proposer)
 
@@ -234,7 +236,8 @@ def execute_moa_workflow(request: str, agents_data: list, current_agent: dict, a
     for i in range(2, 4):  # Adjust the number of layers as needed
         new_responses = []
         for aggregator in aggregators:
-            print(f"🔴 Aggregator (Layer {i}): {aggregator['config']['name']}") # Log the aggregator's name and layer
+            aggregator_emoji = aggregator.get("emoji", "") # Get the aggregator's emoji
+            print(f"🟠 Aggregator (Layer {i}): {aggregator_emoji} {aggregator['config']['name']}") # Log the aggregator's name and layer with emoji
             # Create an instance of OllamaConversableAgent from the agent_instance dictionary
             aggregator_instance = create_autogen_agent(aggregator)
 
@@ -252,7 +255,8 @@ def execute_moa_workflow(request: str, agents_data: list, current_agent: dict, a
         current_responses = new_responses
 
     # Final output: Use the current agent as the final aggregator
-    print(f"🔴 Final Aggregator: {current_agent['config']['name']}") # Log the final aggregator's name
+    agent_emoji = current_agent.get("emoji", "") # Get the agent's emoji
+    print(f"🔴 Final Aggregator: {agent_emoji} {current_agent['config']['name']}") # Log the final aggregator's name with emoji
     aggregate_prompt = f"""{discussion_history}\n{request}\n\nResponses from models:\n{chr(10).join([f'{j+1}. {response}' for j, response in enumerate(current_responses)])}"""
     moa_response = agent_instance.ollama_llm.generate_text(aggregate_prompt)
     print(f"    Final MoA Response: {moa_response}") # Log the final MoA response
