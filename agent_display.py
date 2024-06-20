@@ -92,6 +92,11 @@ def agent_button_callback(agent_index: int):
                     update_discussion_and_whiteboard(agent_name, response_text, user_input)
         else:
             process_agent_interaction(agent_index)
+
+        # Reset next_agent to allow the button to be clicked again
+        st.session_state["next_agent"] = None
+        # Immediately trigger a re-run to make the button clickable again
+        st.session_state["trigger_rerun"] = True
     return callback
 
 def display_agents() -> None:
@@ -123,6 +128,15 @@ def display_agents() -> None:
         st.sidebar.title("Your Agents")
         st.sidebar.subheader("Click to interact")
 
+        # Apply CSS for 100% width buttons
+        st.sidebar.markdown("""
+        <style>
+        div.stButton > button {
+            width: 100%;
+        }
+        </style>
+        """, unsafe_allow_html=True)
+
         for index, agent_data in enumerate(agents_data):
             agent_name = agent_data["config"].get("name", f"Unnamed Agent {index + 1}") # Correct key: "config"
 
@@ -141,41 +155,13 @@ def display_agents() -> None:
                 # Check if the agent is saved (has a 'saved' key in its data)
                 is_agent_saved = agent_data.get("saved", False)
 
-                if "next_agent" in st.session_state and st.session_state.next_agent == agent_name:
-                    button_style = """
-                    <style>
-                    .custom-button {
-                        background-color: #f0f0f0;
-                        color: black;
-                        padding: 0rem .3rem;
-                        border: none;
-                        border-radius: 0.25rem;
-                        cursor: pointer.
-                    }
-                    .custom-button.active {
-                        background-color: green;
-                        color: white.
-                    }
-                    .custom-button.disabled {
-                        background-color: #cccccc;
-                        color: #666666;
-                        cursor: not-allowed;
-                    }
-                    </style>
-                    """
-                    button_class = "custom-button active" if is_agent_saved else "custom-button disabled"
-                    st.markdown(
-                        button_style + f'<button class="{button_class}">{agent_data.get("emoji", "🐶")} {agent_name}</button>',
-                        unsafe_allow_html=True,
-                    )
-                else:
-                    # Use a regular button with the disabled attribute if the agent is not saved
-                    st.button(
-                        f'{agent_data.get("emoji", "🐶")} {agent_name}',
-                        key=f"agent_{index}",
-                        on_click=agent_button_callback(index),
-                        disabled=not is_agent_saved, # Disable the button if not saved
-                    )
+                # Use a regular button with the disabled attribute if the agent is not saved
+                st.button(
+                    f'{agent_data.get("emoji", "🐶")} {agent_name}',
+                    key=f"agent_{index}",
+                    on_click=agent_button_callback(index),
+                    disabled=not is_agent_saved, # Disable the button if not saved
+                )
 
     handle_agent_editing(teams, agents_base_dir)
 
