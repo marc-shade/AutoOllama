@@ -30,12 +30,14 @@ def get_available_models():
     return models
 
 def get_model_hash(model_name):
-    """Gets the hash of a model using the ollama.show endpoint."""
-    payload = {"name": model_name}
-    response = requests.post(f"{OLLAMA_URL}/show", json=payload)
+    """Gets the hash of a model using the ollama.list endpoint."""
+    response = requests.get(f"{OLLAMA_URL}/list")
     response.raise_for_status()
-    model_info = response.json()
-    return model_info.get("hash", None)
+    models_info = response.json()
+    for model in models_info.get("models", []):
+        if model["name"] == model_name:
+            return model.get("hash", None)
+    return None
 
 def get_latest_model_hash(model_name):
     """Gets the latest hash of a model from the ollama.tags endpoint."""
@@ -445,15 +447,13 @@ def update_models():
     available_models = get_available_models()
     if st.button("Update All Models"):
         for model_name in available_models:
-            local_hash = get_model_hash(model_name)
-
-            # Check if the model is legitimate (has a valid hash)
-            if local_hash:
-                st.write(f"Updating model: `{model_name}`")
-                pull_model(model_name)  # Pull the model regardless of hash match
-            else:
-                st.write(f"Skipping model with invalid hash: `{model_name}`")
-        st.success("All models updated.")
+            # Skip custom models (those with a ':' in the name)
+            if 'gpt' in model_name:
+                st.write(f"Skipping custom model: `{model_name}`")
+                continue
+            st.write(f"Updating model: `{model_name}`")
+            pull_model(model_name)
+        st.success("All models updated successfully!")
 
 def save_chat_history(chat_history, filename="chat_history.json"):
     with open(filename, "w") as f:
