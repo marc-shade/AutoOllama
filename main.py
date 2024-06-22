@@ -5,15 +5,25 @@ st.set_page_config(layout="wide")
 import os
 
 # Function to load other apps as plugins
+import sys  # Import the sys module
+
 def load_plugin(plugin_name):
-    plugin_path = os.path.join(os.path.dirname(__file__), 'plugins', plugin_name, 'main-workbench.py')
+    plugin_dir = os.path.join(os.path.dirname(__file__), 'plugins', plugin_name)
+    plugin_path = os.path.join(plugin_dir, 'main.py')
     if not os.path.exists(plugin_path):
         st.error(f"Plugin {plugin_name} not found at {plugin_path}")
         return
+
+    # Add the plugin's directory to the Python path
+    sys.path.append(plugin_dir)
+
     with open(plugin_path, encoding='utf-8') as f:
         code = compile(f.read(), plugin_path, 'exec')
         exec(code, globals())
 
+    # Optionally remove the plugin's directory from the Python path
+    # sys.path.remove(plugin_dir)
+    
 # Initialize current_app in session state if not present
 if "current_app" not in st.session_state:
     st.session_state.current_app = "TeamForgeAI"
