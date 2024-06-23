@@ -3,8 +3,11 @@ import json
 import os
 import streamlit as st
 
+# Get the directory of the current script
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+
 def get_prompts_file_path(prompt_type):
-    prompts_folder = "prompts"
+    prompts_folder = os.path.join(SCRIPT_DIR, "prompts")
     if not os.path.exists(prompts_folder):
         os.makedirs(prompts_folder)
     return os.path.join(prompts_folder, f"{prompt_type}_prompts.json")
@@ -55,4 +58,4 @@ def manage_prompts():
         else:
             save_prompts("metacognitive", edited_prompts)
         st.success(f"{selected_prompt_type} prompts saved successfully!")
-        st.experimental_rerun()
+        st.rerun()
